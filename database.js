@@ -41,7 +41,7 @@ function initializeTables() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // Products table
+    // Products table with color options and max quantity
     db.run(`CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sku TEXT UNIQUE NOT NULL,
@@ -57,7 +57,9 @@ function initializeTables() {
         pid TEXT,
         vid TEXT,
         provider TEXT,
-        supplierLink TEXT
+        supplierLink TEXT,
+        colors TEXT,
+        maxQuantity INTEGER DEFAULT 10
     )`);
 
     // Orders table with tracking support and supplier notes
@@ -96,6 +98,20 @@ function initializeTables() {
             console.error('Error updating existing orders with supplier_notes:', err.message);
         } else {
             console.log('Updated existing orders with supplier_notes');
+        }
+    });
+    
+    // Migration: Add colors column to products
+    db.run(`ALTER TABLE products ADD COLUMN IF NOT EXISTS colors TEXT`, (err) => {
+        if (err) {
+            console.log('Note: colors column may already exist');
+        }
+    });
+    
+    // Migration: Add maxQuantity column to products
+    db.run(`ALTER TABLE products ADD COLUMN IF NOT EXISTS maxQuantity INTEGER DEFAULT 10`, (err) => {
+        if (err) {
+            console.log('Note: maxQuantity column may already exist');
         }
     });
     

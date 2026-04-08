@@ -683,7 +683,29 @@
             if (currentUser) await fetchApi('/api/user/cart', 'POST', { cart });
         }
         function addToCartActive() {
-            for (let i = 0; i < currentQty; i++) cart.push({ ...activeProduct, qty: 1 });
+            // בדיקת צבע נבחר אם יש צבעים זמינים
+            let selectedColor = null;
+            if (activeProduct.colors) {
+                const colors = JSON.parse(activeProduct.colors);
+                if (colors.length > 0) {
+                    const selected = document.querySelector('input[name="selectedColor"]:checked');
+                    if (!selected) {
+                        showToast('אנא בחר צבע', true);
+                        return;
+                    }
+                    selectedColor = selected.value;
+                }
+            }
+            
+            // בדיקת מקסימום כמות בעגלה
+            const existingQty = cart.filter(item => item.id === activeProduct.id).length;
+            const maxQty = activeProduct?.maxQuantity ?? 10;
+            if (existingQty + currentQty > maxQty) {
+                showToast(`מקסימום ${maxQty} יחידות למוצר זה. יש לך כבר ${existingQty} בעגלה.`, true);
+                return;
+            }
+            
+            for (let i = 0; i < currentQty; i++) cart.push({ ...activeProduct, qty: 1, selectedColor });
             updateCartCounter();
             showToast(`נוספו ${currentQty} יחידות 🛒`);
             if (currentUser) fetchApi('/api/user/cart', 'POST', { cart });
@@ -838,6 +860,33 @@
             document.getElementById('detName').innerText = activeProduct.name;
             document.getElementById('detPrice').innerText = '₪' + activeProduct.price;
             document.getElementById('detDesc').innerText = activeProduct.description || '';
+            
+            // הצגת בחירת צבע אם יש צבעים זמינים
+            let colorsHtml = '';
+            if (activeProduct.colors) {
+                const colors = JSON.parse(activeProduct.colors);
+                if (colors.length > 0) {
+                    colorsHtml = `
+                        <div style="margin: 15px 0; text-align: right;">
+                            <span style="color: #aaa; font-size: 14px; display: block; margin-bottom: 8px;">צבע:</span>
+                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                ${colors.map(color => `
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #111; padding: 8px 12px; border-radius: 6px; border: 2px solid #333;" class="color-option">
+                                        <input type="radio" name="selectedColor" value="${color}" style="width: auto; margin: 0;">
+                                        <span>${color === 'שחור' ? '⚫' : '⚪'} ${color}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            // הוספת בחירת צבע לתיאור אם יש
+            if (colorsHtml) {
+                document.getElementById('detDesc').innerHTML = colorsHtml + '<br>' + (activeProduct.description || '');
+            }
+            
             document.getElementById('detailsModal').style.display = 'flex';
             
             // טען כפתור PayPal
@@ -845,9 +894,16 @@
         }
 
         function changeQty(delta) {
+            const maxQty = activeProduct?.maxQuantity ?? 10;
             const stock = activeProduct?.stock ?? 99;
-            currentQty = Math.max(1, Math.min(stock, currentQty + delta));
+            const limit = Math.min(maxQty, stock);
+            currentQty = Math.max(1, Math.min(limit, currentQty + delta));
             document.getElementById('qtyDisplay').innerText = currentQty;
+            
+            // הודעה אם מגביל כמות
+            if (currentQty >= maxQty && delta > 0) {
+                showToast(`מקסימום ${maxQty} יחידות למוצר זה`, true);
+            }
         }
 
         function renderPaypal() {

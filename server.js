@@ -1226,11 +1226,12 @@ app.get('/api/products', (req, res) => {
 });
 
 app.post('/api/products', authenticateAdmin, (req, res) => {
-    const { sku, name, price, originalPrice, supplierCost, description, category, inStock, pid, vid, provider, supplierLink, image, gallery } = req.body;
+    const { sku, name, price, originalPrice, supplierCost, description, category, inStock, pid, vid, provider, supplierLink, image, gallery, colors, maxQuantity } = req.body;
     const galleryStr = JSON.stringify(gallery || []);
+    const colorsStr = JSON.stringify(colors || []);
     
-    db.run('INSERT INTO products (sku, name, price, originalPrice, supplierCost, image, gallery, description, category, inStock, pid, vid, provider, supplierLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-        [sku, name, price, originalPrice, supplierCost, image, galleryStr, description, category, inStock || 1, pid, vid, provider, supplierLink], 
+    db.run('INSERT INTO products (sku, name, price, originalPrice, supplierCost, image, gallery, description, category, inStock, pid, vid, provider, supplierLink, colors, maxQuantity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+        [sku, name, price, originalPrice, supplierCost, image, galleryStr, description, category, inStock || 1, pid, vid, provider, supplierLink, colorsStr, maxQuantity || 10], 
         function(err) {
             if (err) {
                 console.error('Error adding product:', err);
@@ -1243,11 +1244,12 @@ app.post('/api/products', authenticateAdmin, (req, res) => {
 
 app.put('/api/products/:id', authenticateAdmin, (req, res) => {
     const { id } = req.params;
-    const { sku, name, price, originalPrice, supplierCost, description, category, inStock, pid, vid, provider, supplierLink, image, gallery } = req.body;
+    const { sku, name, price, originalPrice, supplierCost, description, category, inStock, pid, vid, provider, supplierLink, image, gallery, colors, maxQuantity } = req.body;
     const galleryStr = JSON.stringify(gallery || []);
+    const colorsStr = JSON.stringify(colors || []);
     
-    db.run('UPDATE products SET sku = ?, name = ?, price = ?, originalPrice = ?, supplierCost = ?, image = ?, gallery = ?, description = ?, category = ?, inStock = ?, pid = ?, vid = ?, provider = ?, supplierLink = ? WHERE id = ?', 
-        [sku, name, price, originalPrice, supplierCost, image, galleryStr, description, category, inStock, pid, vid, provider, supplierLink, id], 
+    db.run('UPDATE products SET sku = ?, name = ?, price = ?, originalPrice = ?, supplierCost = ?, image = ?, gallery = ?, description = ?, category = ?, inStock = ?, pid = ?, vid = ?, provider = ?, supplierLink = ?, colors = ?, maxQuantity = ? WHERE id = ?', 
+        [sku, name, price, originalPrice, supplierCost, image, galleryStr, description, category, inStock, pid, vid, provider, supplierLink, colorsStr, maxQuantity || 10, id], 
         function(err) {
             if (err) {
                 console.error('Error updating product:', err);

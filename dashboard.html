@@ -632,6 +632,28 @@
                         <option value="מגדילי טווח WiFi">מגדילי טווח WiFi</option>
                     </select>
                 </div>
+                <div class="form-group" style="background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333;">
+                    <label style="color: var(--primary-red);"><i class="fas fa-palette"></i> אפשרויות צבע:</label>
+                    <div style="display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="colorBlack" value="שחור" style="width: auto;">
+                            <span>⚫ שחור</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="colorWhite" value="לבן" style="width: auto;">
+                            <span>⚪ לבן</span>
+                        </label>
+                    </div>
+                    <small style="color: #888; display: block; margin-top: 8px;">סמן צבעים זמינים למוצר זה</small>
+                </div>
+                <div class="form-group" style="background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333;">
+                    <label style="color: var(--primary-red);"><i class="fas fa-sort-numeric-up"></i> הגבלת כמות להזמנה:</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                        <input type="number" id="maxQuantity" min="1" max="99" value="10" style="width: 80px;">
+                        <small style="color: #888;">מקסימום פריטים שאפשר להזמין ממוצר זה</small>
+                    </div>
+                    <small style="color: #f44336; display: block; margin-top: 8px;">למקלדת Attack Shark - הגדר ל-1</small>
+                </div>
                 <div class="form-group">
                     <label>תיאור:</label>
                     <textarea id="productDescription"></textarea>
@@ -1204,10 +1226,23 @@
                 document.getElementById('productDescription').value = product.description || '';
                 document.getElementById('productImage').value = product.image || '';
                 document.getElementById('productInStock').value = product.inStock;
+                
+                // טעינת צבעים
+                const colors = product.colors ? JSON.parse(product.colors) : [];
+                document.getElementById('colorBlack').checked = colors.includes('שחור');
+                document.getElementById('colorWhite').checked = colors.includes('לבן');
+                
+                // טעינת מקסימום כמות
+                document.getElementById('maxQuantity').value = product.maxQuantity || 10;
             } else {
                 title.textContent = 'הוסף מוצר חדש';
                 document.getElementById('productForm').reset();
                 document.getElementById('productId').value = '';
+                document.getElementById('colorBlack').checked = false;
+                document.getElementById('colorWhite').checked = false;
+                document.getElementById('maxQuantity').value = 10;
+                currentImages = [];
+                updateGalleryPreview();
             }
             
             modal.style.display = 'flex';
@@ -1686,6 +1721,11 @@
                 return;
             }
             
+            // איסוף צבעים נבחרים
+            const colors = [];
+            if (document.getElementById('colorBlack').checked) colors.push('שחור');
+            if (document.getElementById('colorWhite').checked) colors.push('לבן');
+            
             const productData = {
                 sku: document.getElementById('productSku').value,
                 name: document.getElementById('productName').value,
@@ -1696,7 +1736,9 @@
                 description: document.getElementById('productDescription').value,
                 image: mainImage,
                 gallery: JSON.parse(document.getElementById('productGallery').value || '[]'),
-                inStock: parseInt(document.getElementById('productInStock').value)
+                inStock: parseInt(document.getElementById('productInStock').value),
+                colors: colors,
+                maxQuantity: parseInt(document.getElementById('maxQuantity').value) || 10
             };
             
             console.log('Product Data:', productData);
