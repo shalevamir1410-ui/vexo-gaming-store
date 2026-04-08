@@ -585,11 +585,23 @@
                 </div>
                 <div class="form-group">
                     <label>לינק AliExpress (אופציונלי):</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="aliExpressUrl" placeholder="הדבק לינק AliExpress והקליק על שלוף" style="flex: 1;">
-                        <button type="button" class="btn btn-secondary" onclick="scrapeAliExpress()">
-                            <i class="fas fa-magic"></i> שלוף מידע
-                        </button>
+                    <input type="text" id="aliExpressUrl" placeholder="הדבק לינק AliExpress לשמירת מקור">
+                </div>
+                <div class="form-group" style="background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333;">
+                    <label style="color: var(--primary-red);"><i class="fas fa-calculator"></i> מחשבון רווח אוטומטי (40%):</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                        <div style="flex: 1;">
+                            <small style="color: #888;">מחיר רכישה בסין ($)</small>
+                            <input type="number" id="chinaPrice" step="0.01" placeholder="0.00" oninput="calculateProfit()" style="margin-top: 5px;">
+                        </div>
+                        <div style="color: #888; font-size: 20px;">→</div>
+                        <div style="flex: 1;">
+                            <small style="color: #4caf50;">מחיר בחנות (40% רווח)</small>
+                            <input type="number" id="storePrice" step="0.01" readonly style="margin-top: 5px; background: #2d2d2d; color: #4caf50; font-weight: bold;">
+                        </div>
+                    </div>
+                    <div id="profitDisplay" style="margin-top: 10px; color: #888; font-size: 12px;">
+                        הכנס מחיר רכישה לחישוב רווח
                     </div>
                 </div>
                 <div class="form-group">
@@ -597,16 +609,16 @@
                     <input type="text" id="productName" required>
                 </div>
                 <div class="form-group">
-                    <label>מחיר:</label>
-                    <input type="number" id="productPrice" step="0.01" required>
+                    <label>מחיר למכירה (חנות):</label>
+                    <input type="number" id="productPrice" step="0.01" required placeholder="השתמש במחשבון או הזן ידנית">
                 </div>
                 <div class="form-group">
+                    <label>עלות ספק (רכישה):</label>
+                    <input type="number" id="productSupplierCost" step="0.01" placeholder="מחיר רכישה בסין">
+                </div>
+                <div class="form-group" style="display: none;">
                     <label>מחיר מקורי:</label>
                     <input type="number" id="productOriginalPrice" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>עלות ספק:</label>
-                    <input type="number" id="productSupplierCost" step="0.01">
                 </div>
                 <div class="form-group">
                     <label>קטגוריה:</label>
@@ -1471,6 +1483,32 @@
                 const errorMsg = result?.error || result?.details || 'שגיאה לא ידועה';
                 showToast('שגיאה: ' + errorMsg, true);
                 console.error('AliExpress scrape error:', result);
+            }
+        }
+
+        // מחשבון רווח אוטומטי 40%
+        function calculateProfit() {
+            const chinaPrice = parseFloat(document.getElementById('chinaPrice').value) || 0;
+            if (chinaPrice > 0) {
+                const storePrice = Math.ceil(chinaPrice * 1.4); // 40% רווח
+                document.getElementById('storePrice').value = storePrice;
+                document.getElementById('productPrice').value = storePrice;
+                document.getElementById('productSupplierCost').value = chinaPrice;
+                
+                const profit = storePrice - chinaPrice;
+                const profitPercent = ((profit / chinaPrice) * 100).toFixed(0);
+                
+                document.getElementById('profitDisplay').innerHTML = `
+                    <span style="color: #4caf50;">
+                        רווח: $${profit.toFixed(2)} (${profitPercent}%)
+                    </span> | 
+                    <span style="color: #888;">
+                        מחיר סופי: $${storePrice}
+                    </span>
+                `;
+            } else {
+                document.getElementById('storePrice').value = '';
+                document.getElementById('profitDisplay').innerHTML = 'הכנס מחיר רכישה לחישוב רווח';
             }
         }
 
