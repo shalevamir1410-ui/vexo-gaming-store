@@ -1497,6 +1497,34 @@ app.post('/api/import-cj-product', authenticateAdmin, async (req, res) => {
     }
 });
 
+// Manual sync all CJ products - סנכרון ידני של כל המוצרים
+app.post('/api/sync-cj-products', authenticateAdmin, async (req, res) => {
+    console.log('🔄 Manual CJ Products Sync requested by admin');
+    
+    try {
+        const result = await syncCJProducts();
+        
+        if (result.success) {
+            res.json({ 
+                success: true, 
+                updated: result.updated,
+                message: 'Sync completed successfully'
+            });
+        } else {
+            res.status(500).json({ 
+                success: false, 
+                error: result.error || 'Sync failed'
+            });
+        }
+    } catch (error) {
+        console.error('❌ Manual sync error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message || 'Server error during sync'
+        });
+    }
+});
+
 // AliExpress scraper
 app.post('/api/scrape-aliexpress', authenticateAdmin, async (req, res) => {
     const { url } = req.body;

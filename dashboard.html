@@ -547,7 +547,19 @@
                 <button class="btn btn-primary" onclick="importCJProduct()">
                     <i class="fas fa-download"></i> ייבא מוצר
                 </button>
-                <div id="importResult" style="margin-top: 20px;"></div>
+                
+                <hr style="border-color: #333; margin: 30px 0;">
+                
+                <h3 style="color: var(--primary-red); margin-bottom: 20px;">סנכרון כללי מ-CJ Dropshipping</h3>
+                <p style="color: #888; margin-bottom: 20px; font-size: 14px;">
+                    <i class="fas fa-info-circle"></i> 
+                    כפתור זה מסנכרן את כל המוצרים מ-CJ Dropshipping ידנית. 
+                    הסנכרון האוטומטי מתבצע כל 2 שעות.
+                </p>
+                <button class="btn btn-secondary" onclick="syncAllCJProducts()" id="syncCjBtn">
+                    <i class="fas fa-sync-alt"></i> סנכרן את כל המוצרים
+                </button>
+                <div id="syncResult" style="margin-top: 20px;"></div>
             </div>
         </div>
     </div>
@@ -1300,6 +1312,36 @@
                 showToast('מוצר יובא בהצלחה');
                 document.getElementById('cjSku').value = '';
                 await loadProducts();
+            }
+        }
+
+        async function syncAllCJProducts() {
+            const btn = document.getElementById('syncCjBtn');
+            const resultDiv = document.getElementById('syncResult');
+            
+            // מצב טעינה
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מסנכרן...';
+            resultDiv.innerHTML = '<p style="color: #888;">מסנכרן מוצרים מ-CJ Dropshipping...</p>';
+            
+            try {
+                const result = await fetchApi('/api/sync-cj-products', 'POST', {});
+                
+                if (result && result.success) {
+                    resultDiv.innerHTML = `<p style="color: #4caf50;"><i class="fas fa-check-circle"></i> סנכרון הושלם בהצלחה! עודכנו ${result.updated || 0} מוצרים.</p>`;
+                    showToast('סנכרון מוצרים הושלם בהצלחה!');
+                    await loadProducts(); // רענון רשימת המוצרים
+                } else {
+                    resultDiv.innerHTML = `<p style="color: #f44336;"><i class="fas fa-exclamation-circle"></i> שגיאה בסנכרון: ${result?.error || 'Unknown error'}</p>`;
+                    showToast('שגיאה בסנכרון מוצרים', true);
+                }
+            } catch (error) {
+                console.error('Sync error:', error);
+                resultDiv.innerHTML = '<p style="color: #f44336;"><i class="fas fa-exclamation-circle"></i> שגיאת רשת - בדוק חיבור אינטרנט</p>';
+                showToast('שגיאת רשת בסנכרון', true);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> סנכרן את כל המוצרים';
             }
         }
 
