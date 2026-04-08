@@ -435,6 +435,13 @@
             </div>
         </div>
 
+        <!-- כפתור רענון -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+            <button class="btn btn-secondary" onclick="refreshAllData()" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i> רענן נתונים
+            </button>
+        </div>
+
         <!-- טאבים -->
         <div class="tabs">
             <button class="tab active" onclick="showTab('products')">
@@ -1312,6 +1319,35 @@
                 showToast('מוצר יובא בהצלחה');
                 document.getElementById('cjSku').value = '';
                 await loadProducts();
+            }
+        }
+
+        async function refreshAllData() {
+            const btn = document.getElementById('refreshBtn');
+            
+            // מצב טעינה
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מרענן...';
+            
+            try {
+                // רענון כל הנתונים לפי הטאב הנוכחי
+                await loadStats(); // רענון הסטטיסטיקות
+                
+                if (currentTab === 'products') {
+                    await loadProducts();
+                } else if (currentTab === 'orders') {
+                    await loadOrders();
+                } else if (currentTab === 'users') {
+                    await loadUsers();
+                }
+                
+                showToast('נתונים עודכנו בהצלחה!');
+            } catch (error) {
+                console.error('Refresh error:', error);
+                showToast('שגיאה ברענון נתונים', true);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> רענן נתונים';
             }
         }
 
