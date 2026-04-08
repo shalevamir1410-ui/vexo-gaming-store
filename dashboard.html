@@ -1751,13 +1751,15 @@
             const result = await fetchApi(url, method, productData);
             console.log('Result:', result);
             
-            if (result) {
+            if (result && !result.error) {
                 showToast(productId ? 'מוצר עודכן בהצלחה' : 'מוצר נוסף בהצלחה');
                 closeProductModal();
                 clearImageGallery();
                 await loadProducts();
             } else {
-                showToast('שגיאה בשמירת המוצר', true);
+                const errorMsg = result?.error || result?.details || 'שגיאה בשמירת המוצר';
+                showToast('שגיאה: ' + errorMsg, true);
+                console.error('Save error:', result);
             }
         });
 
