@@ -1535,18 +1535,43 @@ app.post('/api/scrape-aliexpress', authenticateAdmin, async (req, res) => {
     try {
         console.log('🌐 Scraping AliExpress URL:', url);
         
-        const response = await axios.get(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'DNT': '1',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1'
-            },
-            timeout: 15000
-        });
+        if (!url || !url.includes('aliexpress.com')) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid AliExpress URL'
+            });
+        }
+        
+        // ניסיון לשאוב מהדף עם headers משופרים
+        let response;
+        try {
+            response = await axios.get(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9,he;q=0.8',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                    'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+                    'Sec-Ch-Ua-Mobile': '?0',
+                    'Sec-Ch-Ua-Platform': '"Windows"',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Upgrade-Insecure-Requests': '1'
+                },
+                timeout: 20000,
+                maxRedirects: 5
+            });
+        } catch (axiosError) {
+            console.error('❌ Axios error:', axiosError.message);
+            return res.status(500).json({
+                success: false,
+                error: 'AliExpress is blocking the request. Try again later or paste product details manually.',
+                details: axiosError.message
+            });
+        }
         
         const $ = cheerio.load(response.data);
         
@@ -1555,13 +1580,15 @@ app.post('/api/scrape-aliexpress', authenticateAdmin, async (req, res) => {
                    $('h1.product-title').text().trim() ||
                    $('h1[itemprop="name"]').text().trim() ||
                    $('.product-title').text().trim() ||
-                   $('h1').first().text().trim();
+                   $('h1').first().text().trim() ||
+                   $('[class*="title"]').first().text().trim();
         
         // שאיבת מחיר - מספר פורמטים אפשריים
         let priceText = $('.product-price-text').text().trim() ||
                        $('.price').text().trim() ||
                        $('[class*="price"]').first().text().trim() ||
-                       $('span[itemprop="price"]').text().trim();
+                       $('span[itemprop="price"]').text().trim() ||
+                       $('[class*="cost"]').first().text().trim();
         
         // המרת מחיר למספר
         let originalPrice = 0;
@@ -1600,28 +1627,61 @@ app.post('/api/scrape-aliexpress', authenticateAdmin, async (req, res) => {
             }
         });
         
+        // שאיבת תמונות מ-json ld
+        const jsonLd = $('script[type="application/ld+json"]').html();
+        if (jsonLd) {
+            try {
+                const data = JSON.parse(jsonLd);
+                if (data.image) {
+                    if (Array.isArray(data.image)) {
+                        data.image.forEach(img => {
+                            if (!images.includes(img)) images.push(img);
+                        });
+                    } else if (!images.includes(data.image)) {
+                        images.push(data.image);
+                    }
+                }
+                // שאיבת שם ומחיר מ-json ld אם לא נמצאו
+                if (!title && data.name) title = data.name;
+                if (!originalPrice && data.offers && data.offers.price) {
+                    originalPrice = parseFloat(data.offers.price);
+                }
+            } catch (e) {
+                console.log('Failed to parse JSON-LD');
+            }
+        }
+        
         // שאיבת תיאור המוצר
         let description = $('[class*="description"]').first().text().trim() ||
                          $('[class*="product-desc"]').first().text().trim() ||
                          '';
         
         console.log('✅ Scraped successfully:', {
-            title: title?.substring(0, 50),
+            title: title?.substring(0, 50) || 'NOT FOUND',
             originalPrice,
             storePrice,
             imagesCount: images.length
         });
         
+        // אם לא נמצאו נתונים, החזר הודעה מתאימה
+        if (!title && images.length === 0 && originalPrice === 0) {
+            return res.status(500).json({
+                success: false,
+                error: 'Could not extract product data from AliExpress. The page may be using anti-scraping protection. Please enter details manually.'
+            });
+        }
+        
         res.json({
             success: true,
-            title,
+            title: title || 'Product from AliExpress',
             originalPrice,
             storePrice,
             price: storePrice.toString(),
             images: images.slice(0, 8),
             description: description.substring(0, 500),
             source: 'AliExpress',
-            profitMargin: '40%'
+            profitMargin: '40%',
+            warning: !title ? 'Some data could not be extracted automatically' : null
         });
     } catch (error) {
         console.error('❌ AliExpress scrape error:', error.message);

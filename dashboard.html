@@ -1439,9 +1439,17 @@
                     });
                 }
                 
-                showToast(`נשלף בהצלחה! ${result.images?.length || 0} תמונות, מחיר עם ${result.profitMargin || '40%'} רווח ✨`);
+                // הודעת אזהרה אם חלק מהנתונים חסרים
+                if (result.warning) {
+                    showToast(result.warning + ' - יש למלא ידנית', true);
+                } else {
+                    showToast(`נשלף בהצלחה! ${result.images?.length || 0} תמונות, מחיר עם ${result.profitMargin || '40%'} רווח ✨`);
+                }
             } else {
-                showToast('שגיאה בשליפת מידע מ-AliExpress: ' + (result?.error || 'לא ידוע'), true);
+                // הצגת שגיאה מפורטת מהשרת
+                const errorMsg = result?.error || result?.details || 'שגיאה לא ידועה';
+                showToast('שגיאה: ' + errorMsg, true);
+                console.error('AliExpress scrape error:', result);
             }
         }
 
