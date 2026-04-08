@@ -497,6 +497,7 @@
                     <i class="fas fa-eye eye-icon" onclick="togglePassword('passR', this)"></i>
                 </div>
                 <input type="text" id="addrR" placeholder="כתובת למשלוח">
+                <input type="tel" id="phoneR" placeholder="מספר טלפון (לדוגמה: 0501234567)">
                 <button class="btn btn-buy" style="width:100%" onclick="register()">הרשמה וסיום</button>
                 <p style="text-align:center; font-size:12px; color:#555; cursor:pointer"
                     onclick="document.getElementById('formR').style.display='none'; document.getElementById('formL').style.display='block'">
@@ -1179,18 +1180,24 @@
             
             console.log('Trying to login with:', email);
             
-            const res = await fetchApi('/api/login', 'POST', { email, password });
-            
-            if (res) {
-                localStorage.setItem('vexoToken', res.token);
-                localStorage.setItem('vexoUser', JSON.stringify(res.user));
-                currentUser = res.user;
-                token = res.token;
-                updateUI();
-                document.getElementById('authModal').style.display = 'none';
-                showToast('התחברת בהצלחה! 👋');
-            } else {
-                showToast('שגיאה בהתחברות - בדוק אימייל וסיסמה', true);
+            try {
+                const res = await fetchApi('/api/login', 'POST', { email, password });
+                
+                if (res && res.token) {
+                    localStorage.setItem('vexoToken', res.token);
+                    localStorage.setItem('vexoUser', JSON.stringify(res.user));
+                    currentUser = res.user;
+                    token = res.token;
+                    updateUI();
+                    document.getElementById('authModal').style.display = 'none';
+                    showToast('התחברת בהצלחה! 👋');
+                } else {
+                    console.error('Login failed - no token received:', res);
+                    showToast('שגיאה בהתחברות - בדוק אימייל וסיסמה', true);
+                }
+            } catch (e) {
+                console.error('Login error:', e);
+                showToast('שגיאת רשת - בדוק חיבור אינטרנט', true);
             }
         }
 
@@ -1225,6 +1232,7 @@
             const email = document.getElementById('emailR').value;
             const password = document.getElementById('passR').value;
             const address = document.getElementById('addrR').value;
+            const phone = document.getElementById('phoneR').value;
             
             if (!name || !email || !password) {
                 showToast('אנא מלא את כל השדות', true);
@@ -1236,7 +1244,12 @@
                 return;
             }
             
-            const res = await fetchApi('/api/register', 'POST', { name, email, password, address });
+            if (!phone) {
+                showToast('אנא הכנס מספר טלפון', true);
+                return;
+            }
+            
+            const res = await fetchApi('/api/register', 'POST', { name, email, password, address, phone });
             if (res) {
                 localStorage.setItem('vexoToken', res.token);
                 localStorage.setItem('vexoUser', JSON.stringify(res.user));
