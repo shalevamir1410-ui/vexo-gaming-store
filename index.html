@@ -535,11 +535,11 @@
                     <span style="color:#aaa; font-size:14px;">כמות:</span>
                     <div
                         style="display:flex; align-items:center; gap:10px; background:#111; border:1px solid #333; border-radius:8px; padding:5px 10px;">
-                        <button onclick="changeQty(-1)"
-                            style="background:none; border:none; color:white; font-size:20px; cursor:pointer; line-height:1;">−</button>
+                        <button id="qtyMinus" onclick="changeQty(-1)"
+                            style="background:none; border:none; color:white; font-size:20px; cursor:pointer; line-height:1; opacity:0.5;">−</button>
                         <span id="qtyDisplay"
                             style="font-size:18px; font-weight:bold; min-width:20px; text-align:center;">1</span>
-                        <button onclick="changeQty(1)"
+                        <button id="qtyPlus" onclick="changeQty(1)"
                             style="background:none; border:none; color:white; font-size:20px; cursor:pointer; line-height:1;">+</button>
                     </div>
                 </div>
@@ -711,11 +711,7 @@
             if (currentUser) fetchApi('/api/user/cart', 'POST', { cart });
             document.getElementById('detailsModal').style.display = 'none';
         }
-        function changeQty(delta) {
-            const stock = activeProduct?.stock ?? 99;
-            currentQty = Math.max(1, Math.min(stock, currentQty + delta));
-            document.getElementById('qtyDisplay').innerText = currentQty;
-        }
+
         function updateCartCounter() {
             localStorage.setItem('vexoCart', JSON.stringify(cart));
             const badge = document.getElementById('cart-count');
@@ -859,33 +855,52 @@
             updateGalleryDots();
             document.getElementById('detName').innerText = activeProduct.name;
             document.getElementById('detPrice').innerText = '₪' + activeProduct.price;
-            document.getElementById('detDesc').innerText = activeProduct.description || '';
+            
+            // איפוס כמות
+            currentQty = 1;
+            document.getElementById('qtyDisplay').innerText = currentQty;
             
             // הצגת בחירת צבע אם יש צבעים זמינים
             let colorsHtml = '';
+            let descriptionHtml = activeProduct.description || '';
+            
+            // טיפול בצבעים - ניסיון לפרסר אם מחרוזת JSON
+            let colors = [];
             if (activeProduct.colors) {
-                const colors = JSON.parse(activeProduct.colors);
-                if (colors.length > 0) {
-                    colorsHtml = `
-                        <div style="margin: 15px 0; text-align: right;">
-                            <span style="color: #aaa; font-size: 14px; display: block; margin-bottom: 8px;">צבע:</span>
-                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                                ${colors.map(color => `
-                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #111; padding: 8px 12px; border-radius: 6px; border: 2px solid #333;" class="color-option">
-                                        <input type="radio" name="selectedColor" value="${color}" style="width: auto; margin: 0;">
-                                        <span>${color === 'שחור' ? '⚫' : '⚪'} ${color}</span>
-                                    </label>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
+                try {
+                    colors = typeof activeProduct.colors === 'string' ? JSON.parse(activeProduct.colors) : activeProduct.colors;
+                } catch (e) {
+                    console.log('Error parsing colors:', e);
                 }
             }
             
-            // הוספת בחירת צבע לתיאור אם יש
-            if (colorsHtml) {
-                document.getElementById('detDesc').innerHTML = colorsHtml + '<br>' + (activeProduct.description || '');
+            if (colors.length > 0) {
+                colorsHtml = `
+                    <div style="margin: 15px 0; text-align: right;">
+                        <span style="color: #aaa; font-size: 14px; display: block; margin-bottom: 8px;">צבע:</span>
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            ${colors.map(color => `
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #111; padding: 8px 12px; border-radius: 6px; border: 2px solid #333;" class="color-option">
+                                    <input type="radio" name="selectedColor" value="${color}" ${colors.length === 1 ? 'checked' : ''} style="width: auto; margin: 0;">
+                                    <span>${color === 'שחור' ? '⚫' : '⚪'} ${color}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                descriptionHtml = colorsHtml + '<br>' + descriptionHtml;
             }
+            
+            // הוספת התראת מקסימום כמות אם יש
+            const maxQty = activeProduct.maxQuantity || 10;
+            if (maxQty === 1) {
+                descriptionHtml = '<div style="color: #ff6b6b; margin-bottom: 10px;">⚠️ מוגבל ל-1 יחידה בהזמנה</div>' + descriptionHtml;
+            }
+            
+            document.getElementById('detDesc').innerHTML = descriptionHtml;
+            
+            // עדכון מצב כפתורי כמות
+            updateQtyButtons();
             
             document.getElementById('detailsModal').style.display = 'flex';
             
@@ -893,17 +908,40 @@
             renderPaypal();
         }
 
+        function updateQtyButtons() {
+            const maxQty = activeProduct?.maxQuantity ?? 10;
+            const stock = activeProduct?.stock ?? 99;
+            const limit = Math.min(maxQty, stock);
+            
+            const minusBtn = document.getElementById('qtyMinus');
+            const plusBtn = document.getElementById('qtyPlus');
+            
+            if (minusBtn) {
+                minusBtn.style.opacity = currentQty <= 1 ? '0.3' : '1';
+                minusBtn.style.cursor = currentQty <= 1 ? 'not-allowed' : 'pointer';
+            }
+            if (plusBtn) {
+                plusBtn.style.opacity = currentQty >= limit ? '0.3' : '1';
+                plusBtn.style.cursor = currentQty >= limit ? 'not-allowed' : 'pointer';
+            }
+        }
+
         function changeQty(delta) {
             const maxQty = activeProduct?.maxQuantity ?? 10;
             const stock = activeProduct?.stock ?? 99;
             const limit = Math.min(maxQty, stock);
-            currentQty = Math.max(1, Math.min(limit, currentQty + delta));
-            document.getElementById('qtyDisplay').innerText = currentQty;
             
-            // הודעה אם מגביל כמות
-            if (currentQty >= maxQty && delta > 0) {
-                showToast(`מקסימום ${maxQty} יחידות למוצר זה`, true);
+            const newQty = currentQty + delta;
+            if (newQty < 1 || newQty > limit) {
+                if (newQty > limit) {
+                    showToast(`מקסימום ${maxQty} יחידות למוצר זה`, true);
+                }
+                return;
             }
+            
+            currentQty = newQty;
+            document.getElementById('qtyDisplay').innerText = currentQty;
+            updateQtyButtons();
         }
 
         function renderPaypal() {
