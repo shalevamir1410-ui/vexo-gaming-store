@@ -870,16 +870,27 @@
                 
                 const response = await fetch(url, options);
                 console.log(`API Response: ${url} - Status: ${response.status}`);
-                const data = await response.json();
+                
+                // קריאת תשובה כטקסט קודם כדי לטפל במקרה שאינה JSON
+                const responseText = await response.text();
+                let data;
+                
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    // אם התשובה לא JSON, החזר אותה כשגיאה
+                    data = { success: false, error: responseText || 'Server error' };
+                }
                 
                 if (!response.ok) {
-                    throw new Error(data.error || 'Server error');
+                    console.error('API Error Response:', data);
+                    return data; // החזר את נתוני השגיאה במקום null
                 }
                 
                 return data;
             } catch (error) {
                 console.error('API Error:', error);
-                return null;
+                return { success: false, error: error.message || 'Network error' };
             }
         }
 
@@ -1382,11 +1393,20 @@
         }
 
         async function scrapeAliExpress() {
-            const url = document.getElementById('aliExpressUrl').value.trim();
+            let url = document.getElementById('aliExpressUrl').value.trim();
             
             if (!url) {
                 showToast('אנא הדבק לינק AliExpress', true);
                 return;
+            }
+            
+            // ניקוי URL מקודד (decodeURIComponent)
+            try {
+                if (url.includes('%3A') || url.includes('%2F')) {
+                    url = decodeURIComponent(url);
+                }
+            } catch (e) {
+                console.log('URL decoding failed, using original');
             }
             
             if (!url.includes('aliexpress.com')) {
@@ -1395,6 +1415,7 @@
             }
             
             showToast('שולף מידע מ-AliExpress...');
+            console.log('Sending URL to server:', url);
             
             const result = await fetchApi('/api/scrape-aliexpress', 'POST', { url });
             
