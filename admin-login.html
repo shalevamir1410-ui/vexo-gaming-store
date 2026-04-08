@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VEXO Gaming - התחברות אדמין</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #ff0000;
+            --accent-red: #cc0000;
+            --dark-bg: #0a0a0a;
+            --card-bg: #151515;
+            --neon-glow: 0 0 10px rgba(255, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.3);
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            background-image: radial-gradient(circle at 2px 2px, #1a1a1a 1px, transparent 0);
+            background-size: 24px 24px;
+            font-family: 'Outfit', sans-serif;
+            color: white;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-container {
+            background: var(--card-bg);
+            border-radius: 25px;
+            padding: 60px 40px;
+            border: 1px solid #222;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            pointer-events: auto !important;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            text-shadow: var(--neon-glow);
+            color: white;
+            margin-bottom: 10px;
+            direction: ltr;
+        }
+
+        .logo span {
+            color: var(--primary-red);
+        }
+
+        .subtitle {
+            color: #aaa;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            text-align: right;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: 0.3s;
+            pointer-events: auto !important;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary-red);
+            outline: none;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            background: var(--primary-red);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            font-family: 'Outfit';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            z-index: 10;
+            pointer-events: auto !important;
+        }
+
+        .btn:hover {
+            background: var(--accent-red);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:focus {
+            outline: 2px solid rgba(255, 255, 255, 0.5);
+            outline-offset: 2px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            text-decoration: none;
+            margin-top: 30px;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        .back-link:hover {
+            color: var(--primary-red);
+        }
+
+        .error-message {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-message {
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid #28a745;
+            color: #28a745;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+        }
+
+        .loading.show {
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            border: 2px solid #333;
+            border-top: 2px solid var(--primary-red);
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo"><span>VEXO</span> Gaming</div>
+        <div class="subtitle">כניסת אדמין</div>
+        
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+        
+        <form id="adminLoginForm">
+            <div class="form-group">
+                <label for="adminEmail">אימייל אדמין:</label>
+                <input type="email" id="adminEmail" value="Shalevamir1410@gmail.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="adminCode">קוד גישה:</label>
+                <input type="text" id="adminCode" placeholder="הכנס קוד גישה" required>
+            </div>
+            
+            <button type="submit" class="btn">
+                <span id="btnText">
+                    <i class="fas fa-sign-in-alt"></i>
+                    כניסה לדאשבורד
+                </span>
+                <span id="btnLoading" class="loading">
+                    <div class="spinner"></div>
+                    מתחבר...
+                </span>
+            </button>
+        </form>
+        
+        <a href="/" class="back-link">
+            <i class="fas fa-arrow-right"></i>
+            חזרה לאתר
+        </a>
+    </div>
+
+    <script>
+        console.log('Admin login page loaded');
+        
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            console.log('Form submitted');
+            e.preventDefault();
+            
+            const email = document.getElementById('adminEmail').value;
+            const code = document.getElementById('adminCode').value;
+            const errorEl = document.getElementById('errorMessage');
+            const successEl = document.getElementById('successMessage');
+            const btnText = document.getElementById('btnText');
+            const btnLoading = document.getElementById('btnLoading');
+            
+            console.log('Login attempt:', { email, code });
+            
+            // הסתרת הודעות
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+            
+            // הצגת טעינה
+            btnText.style.display = 'none';
+            btnLoading.classList.add('show');
+            
+            try {
+                console.log('Sending login request...');
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, code })
+                });
+                
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (response.ok) {
+                    // שמירת טוקן
+                    localStorage.setItem('vexoAdminToken', data.token);
+                    
+                    // הצגת הודעת הצלחה
+                    successEl.textContent = 'התחברות מוצלחת! מעביר לדאשבורד...';
+                    successEl.style.display = 'block';
+                    
+                    // העברה לדאשבורד אחרי המתנה קצרה
+                    setTimeout(() => {
+                        console.log('Redirecting to dashboard...');
+                        window.location.href = '/dashboard.html';
+                    }, 1500);
+                } else {
+                    // הצגת שגיאה
+                    errorEl.textContent = data.error || 'שגיאת התחברות';
+                    errorEl.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorEl.textContent = 'שגיאת תקשורת. אנא נסה שוב.';
+                errorEl.style.display = 'block';
+            } finally {
+                // הסתרת טעינה
+                btnText.style.display = 'flex';
+                btnLoading.classList.remove('show');
+            }
+        });
+        
+        // ניקוי הודעות בשינוי קלט
+        document.getElementById('adminCode').addEventListener('input', () => {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
