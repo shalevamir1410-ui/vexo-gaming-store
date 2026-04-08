@@ -1525,33 +1525,107 @@ app.post('/api/sync-cj-products', authenticateAdmin, async (req, res) => {
     }
 });
 
-// AliExpress scraper
+// AliExpress scraper - משודרג לשאיבת מידע מלאה
 app.post('/api/scrape-aliexpress', authenticateAdmin, async (req, res) => {
     const { url } = req.body;
     
     try {
+        console.log('🌐 Scraping AliExpress URL:', url);
+        
         const response = await axios.get(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1'
+            },
+            timeout: 15000
         });
         
         const $ = cheerio.load(response.data);
-        const title = $('h1[data-product-title]').text().trim();
-        const price = $('.product-price-text').text().trim();
+        
+        // שאיבת שם המוצר - מספר סלקטורים אפשריים
+        let title = $('h1[data-product-title]').text().trim() ||
+                   $('h1.product-title').text().trim() ||
+                   $('h1[itemprop="name"]').text().trim() ||
+                   $('.product-title').text().trim() ||
+                   $('h1').first().text().trim();
+        
+        // שאיבת מחיר - מספר פורמטים אפשריים
+        let priceText = $('.product-price-text').text().trim() ||
+                       $('.price').text().trim() ||
+                       $('[class*="price"]').first().text().trim() ||
+                       $('span[itemprop="price"]').text().trim();
+        
+        // המרת מחיר למספר
+        let originalPrice = 0;
+        if (priceText) {
+            // הסרת כל תו שאינו ספרה או נקודה
+            const priceMatch = priceText.match(/[\d,.]+/);
+            if (priceMatch) {
+                originalPrice = parseFloat(priceMatch[0].replace(/,/g, ''));
+            }
+        }
+        
+        // חישוב מחיר עם 40% רווח
+        const profitMargin = 0.40; // 40% רווח
+        const storePrice = originalPrice > 0 ? Math.ceil(originalPrice * (1 + profitMargin)) : 0;
+        
+        // שאיבת תמונות - מספר סלקטורים אפשריים
         const images = [];
         
+        // ניסיון לשאוב ממספר מקורות
         $('.image-view-item img').each((i, elem) => {
-            images.push($(elem).attr('src'));
+            const src = $(elem).attr('src') || $(elem).attr('data-src');
+            if (src && !images.includes(src)) images.push(src);
+        });
+        
+        $('.gallery-image img').each((i, elem) => {
+            const src = $(elem).attr('src') || $(elem).attr('data-src');
+            if (src && !images.includes(src)) images.push(src);
+        });
+        
+        $('[class*="image"] img').each((i, elem) => {
+            const src = $(elem).attr('src') || $(elem).attr('data-src');
+            if (src && src.includes('alicdn.com') && !images.includes(src)) {
+                // שימוש בתמונה באיכות גבוהה
+                const highQualitySrc = src.replace(/_\d+x\d+/, '_800x800');
+                images.push(highQualitySrc);
+            }
+        });
+        
+        // שאיבת תיאור המוצר
+        let description = $('[class*="description"]').first().text().trim() ||
+                         $('[class*="product-desc"]').first().text().trim() ||
+                         '';
+        
+        console.log('✅ Scraped successfully:', {
+            title: title?.substring(0, 50),
+            originalPrice,
+            storePrice,
+            imagesCount: images.length
         });
         
         res.json({
+            success: true,
             title,
-            price,
-            images: images.slice(0, 5)
+            originalPrice,
+            storePrice,
+            price: storePrice.toString(),
+            images: images.slice(0, 8),
+            description: description.substring(0, 500),
+            source: 'AliExpress',
+            profitMargin: '40%'
         });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to scrape AliExpress' });
+        console.error('❌ AliExpress scrape error:', error.message);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to scrape AliExpress: ' + error.message 
+        });
     }
 });
 

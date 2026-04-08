@@ -1398,28 +1398,50 @@
             
             const result = await fetchApi('/api/scrape-aliexpress', 'POST', { url });
             
-            if (result) {
+            if (result && result.success) {
                 // מילוי השדות עם המידע שנשלף
                 if (result.title) {
                     document.getElementById('productName').value = result.title;
                 }
                 
-                if (result.price) {
-                    // המרת מחיר למספר
-                    const priceNum = parseFloat(result.price.replace(/[^0-9.]/g, ''));
+                if (result.description) {
+                    document.getElementById('productDesc').value = result.description;
+                }
+                
+                // מחיר עם 40% רווח
+                if (result.storePrice && result.storePrice > 0) {
+                    document.getElementById('productPrice').value = result.storePrice;
+                    // שמירת מחיר המקור לשדה originalPrice (אם קיים)
+                    const originalPriceInput = document.getElementById('productOriginalPrice');
+                    if (originalPriceInput && result.originalPrice) {
+                        originalPriceInput.value = result.originalPrice;
+                    }
+                    
+                    // הצגת הודעה עם פירוט הרווח
+                    const profit = result.storePrice - result.originalPrice;
+                    showToast(`מחיר AliExpress: $${result.originalPrice} → מחיר בחנות: $${result.storePrice} (רווח: $${profit.toFixed(2)}) 💰`);
+                } else if (result.price) {
+                    // fallback למקרה שאין storePrice
+                    const priceNum = parseFloat(result.price.toString().replace(/[^0-9.]/g, ''));
                     if (!isNaN(priceNum)) {
-                        document.getElementById('productPrice').value = priceNum;
+                        document.getElementById('productPrice').value = Math.ceil(priceNum * 1.4);
                     }
                 }
                 
+                // ניקוי גלריה קודמת והוספת תמונות חדשות
                 if (result.images && result.images.length > 0) {
+                    currentImages = []; // ניקוי מערך התמונות
+                    updateGalleryPreview(); // רענון התצוגה
+                    
                     // הוספת התמונות לגלריה
-                    result.images.forEach(img => addImageToGallery(img));
+                    result.images.forEach((img, index) => {
+                        setTimeout(() => addImageToGallery(img), index * 100);
+                    });
                 }
                 
-                showToast('מידע נשלף בהצלחה! ✨');
+                showToast(`נשלף בהצלחה! ${result.images?.length || 0} תמונות, מחיר עם ${result.profitMargin || '40%'} רווח ✨`);
             } else {
-                showToast('שגיאה בשליפת מידע מ-AliExpress', true);
+                showToast('שגיאה בשליפת מידע מ-AliExpress: ' + (result?.error || 'לא ידוע'), true);
             }
         }
 
