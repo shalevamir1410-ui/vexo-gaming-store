@@ -1307,13 +1307,16 @@ app.post('/api/orders', authenticateToken, (req, res) => {
     const items_json = JSON.stringify(items);
     const product_name = items.map(item => item.name).join(', ');
     
-    db.run('INSERT INTO orders (product_name, items_json, revenue, cost, profit, customer_name, customer_email, shipping_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
-        [product_name, items_json, revenue, cost, profit, req.user.name, req.user.email, shippingAddress], 
+    // הערה קבועה לספק - dropshipping
+    const supplierNotes = 'No invoices or logos, dropshipping order.';
+    
+    db.run('INSERT INTO orders (product_name, items_json, revenue, cost, profit, customer_name, customer_email, shipping_address, supplier_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+        [product_name, items_json, revenue, cost, profit, req.user.name, req.user.email, shippingAddress, supplierNotes], 
         function(err) {
             if (err) {
                 return res.status(500).json({ error: 'Failed to create order' });
             }
-            res.json({ id: this.lastID, message: 'Order created successfully' });
+            res.json({ id: this.lastID, message: 'Order created successfully', supplierNotes });
         }
     );
 });

@@ -60,7 +60,7 @@ function initializeTables() {
         supplierLink TEXT
     )`);
 
-    // Orders table with tracking support
+    // Orders table with tracking support and supplier notes
     db.run(`CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         product_name TEXT NOT NULL,
@@ -79,8 +79,25 @@ function initializeTables() {
         last_tracking_check DATETIME,
         cj_order_id TEXT,
         payment_id TEXT,
+        supplier_notes TEXT DEFAULT 'No invoices or logos, dropshipping order.',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
+    
+    // Migration: Add supplier_notes column to existing orders table (if not exists)
+    db.run(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS supplier_notes TEXT DEFAULT 'No invoices or logos, dropshipping order.'`, (err) => {
+        if (err && !err.message.includes('duplicate column')) {
+            console.log('Note: supplier_notes column may already exist or table is new');
+        }
+    });
+    
+    // Update existing orders without supplier_notes
+    db.run(`UPDATE orders SET supplier_notes = 'No invoices or logos, dropshipping order.' WHERE supplier_notes IS NULL OR supplier_notes = ''`, (err) => {
+        if (err) {
+            console.error('Error updating existing orders with supplier_notes:', err.message);
+        } else {
+            console.log('Updated existing orders with supplier_notes');
+        }
+    });
     
     console.log('Database tables initialized successfully.');
 }
