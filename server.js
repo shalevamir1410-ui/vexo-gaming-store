@@ -71,14 +71,8 @@ if (!fs.existsSync('uploads')) {
     fs.mkdirSync('uploads');
 }
 
-// Database connection
-const db = new sqlite3.Database('./database.sqlite', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
-    if (err) {
-        console.error('Error opening database:', err.message);
-    } else {
-        console.log('Connected to SQLite database.');
-    }
-});
+// Database connection - use database.js which initializes tables
+const db = require('./database.js');
 
 // Helper script to fake a WooCommerce store connection for DSers
 // This creates a fake WooCommerce site that DSers can connect to
@@ -1074,6 +1068,16 @@ app.post('/api/track-visitor', (req, res) => {
     });
 });
 
+// Alternative endpoint for tracking (used by frontend)
+app.post('/api/stats/visit', (req, res) => {
+    db.run('UPDATE stats SET visitor_count = visitor_count + 1 WHERE id = 1', (err) => {
+        if (err) {
+            return res.status(500).json({ error: 'Failed to track visitor' });
+        }
+        res.json({ success: true });
+    });
+});
+
 // Get stats
 app.get('/api/stats', authenticateAdmin, (req, res) => {
     db.get('SELECT visitor_count FROM stats', (err, row) => {
@@ -1244,9 +1248,14 @@ app.post('/api/products', authenticateAdmin, (req, res) => {
 
 app.put('/api/products/:id', authenticateAdmin, (req, res) => {
     const { id } = req.params;
+    console.log('PUT /api/products/' + id, 'Body keys:', Object.keys(req.body));
+    console.log('colors:', req.body.colors, 'maxQuantity:', req.body.maxQuantity);
+    
     const { sku, name, price, originalPrice, supplierCost, description, category, inStock, pid, vid, provider, supplierLink, image, gallery, colors, maxQuantity } = req.body;
     const galleryStr = JSON.stringify(gallery || []);
     const colorsStr = JSON.stringify(colors || []);
+    
+    console.log('Updating with colorsStr:', colorsStr, 'maxQuantity:', maxQuantity || 10);
     
     db.run('UPDATE products SET sku = ?, name = ?, price = ?, originalPrice = ?, supplierCost = ?, image = ?, gallery = ?, description = ?, category = ?, inStock = ?, pid = ?, vid = ?, provider = ?, supplierLink = ?, colors = ?, maxQuantity = ? WHERE id = ?', 
         [sku, name, price, originalPrice, supplierCost, image, galleryStr, description, category, inStock, pid, vid, provider, supplierLink, colorsStr, maxQuantity || 10, id], 
@@ -1255,6 +1264,7 @@ app.put('/api/products/:id', authenticateAdmin, (req, res) => {
                 console.error('Error updating product:', err);
                 return res.status(500).json({ error: 'Failed to update product', details: err.message });
             }
+            console.log('Product updated successfully, rows changed:', this.changes);
             res.json({ message: 'Product updated successfully' });
         }
     );
