@@ -613,14 +613,28 @@
                 if (body) opt.body = JSON.stringify(body);
                 const res = await fetch(u, opt);
 
-                // --- FIX: Check if response is actually JSON before parsing ---
-                const contentType = res.headers.get("content-type");
-                if (!contentType || !contentType.includes("application/json")) return null;
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Server error');
+                // קריאת תשובה כטקסט קודם
+                const responseText = await res.text();
+                let data;
+                
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    // אם לא JSON, החזר כשגיאה
+                    return { error: responseText || 'Server error', status: res.status };
+                }
+                
+                // אם התשובה לא OK, החזר את השגיאה כדי שניתן יהיה להציג אותה
+                if (!res.ok) {
+                    console.error("API Error:", res.status, data);
+                    return { error: data.error || 'Server error', status: res.status, ...data };
+                }
+                
                 return data;
-            } catch (e) { console.error("API Error:", e.message); return null; }
+            } catch (e) { 
+                console.error("API Error:", e.message); 
+                return { error: e.message || 'Network error' };
+            }
         }
 
         function showToast(m, err = false) {
@@ -1313,11 +1327,13 @@
             
             const res = await fetchApi('/api/reset-password', 'POST', { email, newPassword });
             
-            if (res) {
+            if (res && !res.error) {
                 showToast('סיסמה אופסה בהצלחה! 🔑');
                 document.getElementById('passL').value = newPassword;
             } else {
-                showToast('שגיאה באיפוס סיסמה - בדוק אימייל', true);
+                const errorMsg = res?.error || 'בדוק אימייל';
+                showToast('שגיאה באיפוס סיסמה: ' + errorMsg, true);
+                console.error('Reset password error:', res);
             }
         }
 
@@ -1344,7 +1360,7 @@
             }
             
             const res = await fetchApi('/api/register', 'POST', { name, email, password, address, phone });
-            if (res) {
+            if (res && res.token) {
                 localStorage.setItem('vexoToken', res.token);
                 localStorage.setItem('vexoUser', JSON.stringify(res.user));
                 currentUser = res.user;
@@ -1353,7 +1369,9 @@
                 document.getElementById('authModal').style.display = 'none';
                 showToast('נרשמת בהצלחה! 🎉');
             } else {
-                showToast('שגיאה בהרשמה', true);
+                const errorMsg = res?.error || 'שגיאה בהרשמה';
+                showToast('שגיאה: ' + errorMsg, true);
+                console.error('Registration error:', res);
             }
         }
 
