@@ -1206,18 +1206,18 @@
             console.log('First user keys:', Object.keys(firstUser || {}));
             
             const html = users.map(user => `
-                <tr>
-                    <td>${user.name || 'ללא שם'}</td>
-                    <td>${user.email || 'ללא אימייל'}</td>
-                    <td>${user.phone || '-'}</td>
-                    <td>${user.address || '-'}</td>
-                    <td>${user.plain_password || '••••••'}</td>
-                    <td>
+                <tr style="display: table-row; background: var(--card-bg);">
+                    <td style="padding: 15px; border-bottom: 1px solid #222; color: white;">${user.name || 'ללא שם'}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid #222; color: white;">${user.email || 'ללא אימייל'}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid #222; color: white;">${user.phone || '-'}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid #222; color: white;">${user.address || '-'}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid #222; color: var(--primary-red); font-family: monospace;">${user.plain_password || '••••••'}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid #222;">
                         <button class="btn btn-secondary" onclick="viewUserOrders('${user.email}')">
                             <i class="fas fa-box"></i> הזמנות
                         </button>
                     </td>
-                    <td class="actions">
+                    <td class="actions" style="padding: 15px; border-bottom: 1px solid #222;">
                         <button class="btn btn-secondary" onclick="editUserPassword(${user.id})">
                             <i class="fas fa-key"></i>
                         </button>
