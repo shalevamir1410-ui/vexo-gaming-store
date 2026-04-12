@@ -1162,10 +1162,15 @@
         }
 
         function renderUsers(users) {
-            console.log('renderUsers() called with', users.length, 'users');
+            console.log('renderUsers() called with', users?.length, 'users', users);
             const tbody = document.getElementById('usersTable');
             
-            if (users.length === 0) {
+            if (!tbody) {
+                console.error('usersTable element not found!');
+                return;
+            }
+            
+            if (!users || !Array.isArray(users) || users.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" class="empty-state">אין משתמשים רשומים במערכת</td></tr>';
                 return;
             }
