@@ -1162,7 +1162,8 @@
         }
 
         function renderUsers(users) {
-            console.log('renderUsers() called with', users?.length, 'users', users);
+            console.log('renderUsers() called with', users?.length, 'users');
+            console.log('users data:', JSON.stringify(users));
             const tbody = document.getElementById('usersTable');
             
             if (!tbody) {
@@ -1170,15 +1171,26 @@
                 return;
             }
             
-            if (!users || !Array.isArray(users) || users.length === 0) {
+            if (!users || !Array.isArray(users)) {
+                console.log('users is not an array:', users);
                 tbody.innerHTML = '<tr><td colspan="7" class="empty-state">אין משתמשים רשומים במערכת</td></tr>';
                 return;
             }
             
-            tbody.innerHTML = users.map(user => `
+            if (users.length === 0) {
+                console.log('users array is empty');
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">אין משתמשים רשומים במערכת</td></tr>';
+                return;
+            }
+            
+            const firstUser = users[0];
+            console.log('First user:', firstUser);
+            console.log('First user keys:', Object.keys(firstUser || {}));
+            
+            const html = users.map(user => `
                 <tr>
-                    <td>${user.name}</td>
-                    <td>${user.email}</td>
+                    <td>${user.name || 'ללא שם'}</td>
+                    <td>${user.email || 'ללא אימייל'}</td>
                     <td>${user.phone || '-'}</td>
                     <td>${user.address || '-'}</td>
                     <td>${user.plain_password || '••••••'}</td>
@@ -1194,6 +1206,10 @@
                     </td>
                 </tr>
             `).join('');
+            
+            console.log('Generated HTML length:', html.length);
+            tbody.innerHTML = html;
+            console.log('HTML inserted into tbody');
         }
 
         function filterProducts() {
