@@ -1747,18 +1747,7 @@ app.get('/api/admin/user-orders/:email', authenticateAdmin, (req, res) => {
     });
 });
 
-app.put('/api/products/:id', authenticateAdmin, upload.single('image'), (req, res) => {
-    const { sku, name, description, price, originalPrice, supplierCost, image, gallery, category, provider, pid, vid, inStock } = req.body;
-    const finalImage = req.file ? req.file.filename : (image || null);
-    const query = `UPDATE products SET sku=?, name=?, description=?, price=?, originalPrice=?, supplierCost=?, image=?, gallery=?, category=?, provider=?, pid=?, vid=?, inStock=? WHERE id=?`;
-    
-    db.run(query, [sku, name, description, price, originalPrice, supplierCost, finalImage, JSON.stringify(gallery || []), category, provider, pid, vid, inStock, req.params.id], (err) => {
-        if (err) {
-            return res.status(500).json({ error: 'Failed to update product' });
-        }
-        res.json({ success: true });
-    });
-});
+// NOTE: PUT /api/products/:id is defined earlier with full colors + maxQuantity support
 
 // Get user orders
 app.get('/api/user/orders', authenticateToken, (req, res) => {
