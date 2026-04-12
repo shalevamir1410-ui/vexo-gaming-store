@@ -951,6 +951,7 @@
         }
 
         function showTab(tabName) {
+            console.log('showTab called:', tabName);
             currentTab = tabName;
             
             // עדכון טאבים
@@ -963,7 +964,12 @@
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
-            document.getElementById(`${tabName}-tab`).classList.add('active');
+            const tabElement = document.getElementById(`${tabName}-tab`);
+            console.log('Tab element found:', tabName + '-tab', !!tabElement);
+            if (tabElement) {
+                tabElement.classList.add('active');
+                console.log('Tab activated:', tabName);
+            }
             
             // טעינת נתונים
             loadTabData(tabName);
@@ -1150,15 +1156,27 @@
         }
 
         async function loadUsers() {
-            console.log('loadUsers() called');
+            console.log('loadUsers() called - START');
             const users = await fetchApi('/api/admin/users');
             console.log('loadUsers() received:', users);
-            if (users) {
+            console.log('loadUsers() users is array:', Array.isArray(users));
+            console.log('loadUsers() users length:', users?.length);
+            if (users && Array.isArray(users)) {
                 allUsers = users;
+                console.log('loadUsers() calling renderUsers with', users.length, 'users');
                 renderUsers(users);
                 // עדכון מונה המשתמשים בסטטיסטיקה
-                document.getElementById('totalUsers').textContent = users.length;
+                const totalUsersEl = document.getElementById('totalUsers');
+                if (totalUsersEl) {
+                    totalUsersEl.textContent = users.length;
+                    console.log('loadUsers() updated totalUsers to', users.length);
+                } else {
+                    console.error('loadUsers() totalUsers element not found!');
+                }
+            } else {
+                console.error('loadUsers() received invalid data:', users);
             }
+            console.log('loadUsers() - END');
         }
 
         function renderUsers(users) {
