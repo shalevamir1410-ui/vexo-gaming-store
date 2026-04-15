@@ -2,19 +2,110 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 let db;
+let isPostgres = false;
+
+// Helper: Convert SQLite ? placeholders to PostgreSQL $1, $2... 
+function convertPlaceholders(sql) {
+    let i = 1;
+    return sql.replace(/\?/g, () => `$${i++}`);
+}
+
+// Helper: Convert SQLite-specific SQL to PostgreSQL-compatible SQL
+function convertSql(sql) {
+    let pgSql = convertPlaceholders(sql);
+    // INSERT OR IGNORE → INSERT ... ON CONFLICT DO NOTHING
+    pgSql = pgSql.replace(/INSERT OR IGNORE INTO/g, 'INSERT INTO');
+    // AUTOINCREMENT is not needed in PostgreSQL (SERIAL handles it)
+    pgSql = pgSql.replace(/AUTOINCREMENT/g, '');
+    // DATETIME → TIMESTAMP
+    pgSql = pgSql.replace(/DATETIME/g, 'TIMESTAMP');
+    // ALTER TABLE ... ADD COLUMN IF NOT EXISTS → just try it, catch error
+    return pgSql;
+}
+
+// PostgreSQL wrapper that mimics SQLite API
+class PgWrapper {
+    constructor(pool) {
+        this.pool = pool;
+    }
+
+    async _query(sql, params = []) {
+        // Check if original SQL has INSERT OR IGNORE (need ON CONFLICT DO NOTHING)
+        const hasIgnore = /INSERT\s+OR\s+IGNORE/i.test(sql);
+        let pgSql = convertSql(sql);
+        
+        // Auto-add RETURNING id for INSERT statements so this.lastID works
+        // But for INSERT OR IGNORE, add ON CONFLICT DO NOTHING instead
+        if (/^\s*INSERT\s+/i.test(pgSql) && !/RETURNING/i.test(pgSql)) {
+            if (hasIgnore) {
+                pgSql = pgSql.replace(/;\s*$/, '') + ' ON CONFLICT DO NOTHING RETURNING id';
+            } else {
+                pgSql = pgSql.replace(/;\s*$/, '') + ' RETURNING id';
+            }
+        }
+        return await this.pool.query(pgSql, params);
+    }
+
+    // db.run(sql, params, callback) - for INSERT, UPDATE, DELETE
+    run(sql, paramsOrCallback, maybeCallback) {
+        const params = Array.isArray(paramsOrCallback) ? paramsOrCallback : [];
+        const callback = typeof paramsOrCallback === 'function' ? paramsOrCallback : maybeCallback;
+        
+        this._query(sql, params).then(result => {
+            if (callback) {
+                // Mimic SQLite's this.lastID and this.changes
+                const context = {
+                    lastID: result.rows[0]?.id || result.rows?.insertId || (result.rows && result.rows[0] ? result.rows[0].id : null),
+                    changes: result.rowCount || result.rows?.length || 0
+                };
+                // For INSERT with RETURNING id, get the id
+                if (result.rows && result.rows[0] && result.rows[0].id) {
+                    context.lastID = result.rows[0].id;
+                }
+                callback.call(context, null);
+            }
+        }).catch(err => {
+            if (callback) callback.call({ lastID: null, changes: 0 }, err);
+        });
+    }
+
+    // db.all(sql, params, callback) - returns all rows
+    all(sql, paramsOrCallback, maybeCallback) {
+        const params = Array.isArray(paramsOrCallback) ? paramsOrCallback : [];
+        const callback = typeof paramsOrCallback === 'function' ? paramsOrCallback : maybeCallback;
+        
+        this._query(sql, params).then(result => {
+            if (callback) callback(null, result.rows || []);
+        }).catch(err => {
+            if (callback) callback(err, null);
+        });
+    }
+
+    // db.get(sql, params, callback) - returns first row
+    get(sql, paramsOrCallback, maybeCallback) {
+        const params = Array.isArray(paramsOrCallback) ? paramsOrCallback : [];
+        const callback = typeof paramsOrCallback === 'function' ? paramsOrCallback : maybeCallback;
+        
+        this._query(sql, params).then(result => {
+            if (callback) callback(null, (result.rows && result.rows[0]) || null);
+        }).catch(err => {
+            if (callback) callback(err, null);
+        });
+    }
+}
 
 // Check if running on Render with PostgreSQL
 if (process.env.DATABASE_URL) {
-    // Use PostgreSQL on Render
     const { Pool } = require('pg');
-    db = new Pool({
+    const pool = new Pool({
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false }
     });
+    db = new PgWrapper(pool);
+    isPostgres = true;
     console.log('Using PostgreSQL database (Render)');
     initializePostgresTables();
 } else {
-    // Use SQLite locally
     const dbPath = path.join(__dirname, 'database.sqlite');
     db = new sqlite3.Database(dbPath, (err) => {
         if (err) {
@@ -27,7 +118,6 @@ if (process.env.DATABASE_URL) {
 }
 
 function initializeTables() {
-    // Stats table first
     db.run(`CREATE TABLE IF NOT EXISTS stats (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         visitor_count INTEGER DEFAULT 0
@@ -35,12 +125,10 @@ function initializeTables() {
         if (err) {
             console.error('Error creating stats table:', err.message);
         } else {
-            // Initialize visitor count if not exists
             db.run(`INSERT OR IGNORE INTO stats (id, visitor_count) VALUES (1, 0)`);
         }
     });
 
-    // Users table
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -55,7 +143,6 @@ function initializeTables() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // Products table with color options and max quantity
     db.run(`CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sku TEXT UNIQUE NOT NULL,
@@ -76,7 +163,6 @@ function initializeTables() {
         maxQuantity INTEGER DEFAULT 10
     )`);
 
-    // Orders table with tracking support and supplier notes
     db.run(`CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         product_name TEXT NOT NULL,
@@ -99,14 +185,12 @@ function initializeTables() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     
-    // Migration: Add supplier_notes column to existing orders table (if not exists)
     db.run(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS supplier_notes TEXT DEFAULT 'No invoices or logos, dropshipping order.'`, (err) => {
         if (err && !err.message.includes('duplicate column')) {
             console.log('Note: supplier_notes column may already exist or table is new');
         }
     });
     
-    // Update existing orders without supplier_notes
     db.run(`UPDATE orders SET supplier_notes = 'No invoices or logos, dropshipping order.' WHERE supplier_notes IS NULL OR supplier_notes = ''`, (err) => {
         if (err) {
             console.error('Error updating existing orders with supplier_notes:', err.message);
@@ -115,14 +199,12 @@ function initializeTables() {
         }
     });
     
-    // Migration: Add colors column to products
     db.run(`ALTER TABLE products ADD COLUMN IF NOT EXISTS colors TEXT`, (err) => {
         if (err) {
             console.log('Note: colors column may already exist');
         }
     });
     
-    // Migration: Add maxQuantity column to products
     db.run(`ALTER TABLE products ADD COLUMN IF NOT EXISTS maxQuantity INTEGER DEFAULT 10`, (err) => {
         if (err) {
             console.log('Note: maxQuantity column may already exist');
@@ -135,9 +217,9 @@ function initializeTables() {
 // PostgreSQL initialization
 async function initializePostgresTables() {
     try {
-        const client = await db.connect();
+        const pool = db.pool;
+        const client = await pool.connect();
         
-        // Stats table
         await client.query(`
             CREATE TABLE IF NOT EXISTS stats (
                 id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -146,7 +228,6 @@ async function initializePostgresTables() {
         `);
         await client.query(`INSERT INTO stats (id, visitor_count) VALUES (1, 0) ON CONFLICT DO NOTHING`);
         
-        // Users table
         await client.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -163,7 +244,6 @@ async function initializePostgresTables() {
             )
         `);
         
-        // Products table
         await client.query(`
             CREATE TABLE IF NOT EXISTS products (
                 id SERIAL PRIMARY KEY,
@@ -182,11 +262,11 @@ async function initializePostgresTables() {
                 provider TEXT,
                 supplierLink TEXT,
                 colors TEXT,
-                maxQuantity INTEGER DEFAULT 10
+                maxQuantity INTEGER DEFAULT 10,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
         
-        // Orders table
         await client.query(`
             CREATE TABLE IF NOT EXISTS orders (
                 id SERIAL PRIMARY KEY,
