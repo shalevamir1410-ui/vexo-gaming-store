@@ -27,6 +27,8 @@ function convertSql(sql) {
 class PgWrapper {
     constructor(pool) {
         this.pool = pool;
+        // Expose the pool for direct access (needed for initialization)
+        this._rawPool = pool;
     }
 
     async _query(sql, params = []) {
@@ -217,7 +219,7 @@ function initializeTables() {
 // PostgreSQL initialization
 async function initializePostgresTables() {
     try {
-        const pool = db.pool;
+        const pool = db._rawPool;
         const client = await pool.connect();
         
         await client.query(`
