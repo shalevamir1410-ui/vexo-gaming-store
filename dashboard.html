@@ -585,7 +585,12 @@
                 </div>
                 <div class="form-group">
                     <label>לינק AliExpress (אופציונלי):</label>
-                    <input type="text" id="aliExpressUrl" placeholder="הדבק לינק AliExpress לשמירת מקור">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="aliExpressUrl" placeholder="הדבק לינק AliExpress לשמירת מקור" style="flex: 1;">
+                        <button type="button" class="btn btn-secondary" onclick="scrapeAliExpress()">
+                            <i class="fas fa-magic"></i> לייבא פרטים
+                        </button>
+                    </div>
                 </div>
                 <div class="form-group" style="background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333;">
                     <label style="color: var(--primary-red);"><i class="fas fa-calculator"></i> מחשבון רווח אוטומטי (40%):</label>
