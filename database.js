@@ -1,16 +1,30 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-const dbPath = path.join(__dirname, 'database.sqlite');
+let db;
 
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Error opening database:', err.message);
-    } else {
-        console.log('Connected to SQLite database.');
-        initializeTables();
-    }
-});
+// Check if running on Render with PostgreSQL
+if (process.env.DATABASE_URL) {
+    // Use PostgreSQL on Render
+    const { Pool } = require('pg');
+    db = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+    });
+    console.log('Using PostgreSQL database (Render)');
+    initializePostgresTables();
+} else {
+    // Use SQLite locally
+    const dbPath = path.join(__dirname, 'database.sqlite');
+    db = new sqlite3.Database(dbPath, (err) => {
+        if (err) {
+            console.error('Error opening database:', err.message);
+        } else {
+            console.log('Connected to SQLite database (local).');
+            initializeTables();
+        }
+    });
+}
 
 function initializeTables() {
     // Stats table first
@@ -116,6 +130,92 @@ function initializeTables() {
     });
     
     console.log('Database tables initialized successfully.');
+}
+
+// PostgreSQL initialization
+async function initializePostgresTables() {
+    try {
+        const client = await db.connect();
+        
+        // Stats table
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS stats (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                visitor_count INTEGER DEFAULT 0
+            )
+        `);
+        await client.query(`INSERT INTO stats (id, visitor_count) VALUES (1, 0) ON CONFLICT DO NOTHING`);
+        
+        // Users table
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                plain_password TEXT,
+                phone TEXT,
+                address TEXT,
+                city TEXT,
+                zip TEXT,
+                cart_json TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        // Products table
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS products (
+                id SERIAL PRIMARY KEY,
+                sku TEXT UNIQUE NOT NULL,
+                name TEXT NOT NULL,
+                price REAL NOT NULL,
+                originalPrice REAL,
+                supplierCost REAL,
+                image TEXT,
+                gallery TEXT,
+                description TEXT,
+                category TEXT,
+                inStock INTEGER DEFAULT 1,
+                pid TEXT,
+                vid TEXT,
+                provider TEXT,
+                supplierLink TEXT,
+                colors TEXT,
+                maxQuantity INTEGER DEFAULT 10
+            )
+        `);
+        
+        // Orders table
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS orders (
+                id SERIAL PRIMARY KEY,
+                product_name TEXT NOT NULL,
+                items_json TEXT NOT NULL,
+                revenue REAL NOT NULL,
+                cost REAL NOT NULL,
+                profit REAL NOT NULL,
+                status TEXT DEFAULT 'pending',
+                customer_name TEXT NOT NULL,
+                customer_email TEXT NOT NULL,
+                shipping_address TEXT NOT NULL,
+                trackingNumber TEXT,
+                carrier TEXT DEFAULT 'israel_post',
+                tracking_status TEXT,
+                tracking_details TEXT,
+                last_tracking_check TIMESTAMP,
+                cj_order_id TEXT,
+                payment_id TEXT,
+                supplier_notes TEXT DEFAULT 'No invoices or logos, dropshipping order.',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        client.release();
+        console.log('PostgreSQL tables initialized successfully.');
+    } catch (err) {
+        console.error('Error initializing PostgreSQL tables:', err);
+    }
 }
 
 module.exports = db;
