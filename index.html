@@ -576,7 +576,8 @@
         <div class="search-container">
             <i class="fas fa-search"></i>
             <input type="search" id="vexoSearchInput" placeholder="חפש כאן ציוד גיימינג..." onkeyup="handleSearch()"
-                autocomplete="off" readonly onmouseover="this.removeAttribute('readonly')"
+                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                name="search" readonly onmouseover="this.removeAttribute('readonly')"
                 onfocus="this.removeAttribute('readonly')">
         </div>
         <div class="header-group">
@@ -779,9 +780,17 @@
         }
 
         async function init() {
+            // ניקוי שדה החיפוש למניעת מילוי אוטומטי של אימייל
+            const searchInput = document.getElementById('vexoSearchInput');
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.setAttribute('autocomplete', 'off');
+                searchInput.setAttribute('data-lpignore', 'true');
+            }
+            
             // בדיקה אם המשתמש מחובר
             if (token && currentUser) {
-                console.log('User already logged in:', currentUser.email);
+                console.log('User logged in');
                 updateUI();
             }
             
