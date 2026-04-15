@@ -15,7 +15,13 @@ function convertSql(sql) {
     let pgSql = convertPlaceholders(sql);
     // INSERT OR IGNORE → INSERT ... ON CONFLICT DO NOTHING
     pgSql = pgSql.replace(/INSERT OR IGNORE INTO/g, 'INSERT INTO');
-    // AUTOINCREMENT is not needed in PostgreSQL (SERIAL handles it)
+    // INTEGER PRIMARY KEY AUTOINCREMENT → SERIAL PRIMARY KEY
+    pgSql = pgSql.replace(/INTEGER PRIMARY KEY AUTOINCREMENT/g, 'SERIAL PRIMARY KEY');
+    // INTEGER PRIMARY KEY → SERIAL PRIMARY KEY (for CREATE TABLE)
+    pgSql = pgSql.replace(/CREATE TABLE \w+ \([^)]*INTEGER PRIMARY KEY/g, (match) => {
+        return match.replace(/INTEGER PRIMARY KEY/g, 'SERIAL PRIMARY KEY');
+    });
+    // AUTOINCREMENT alone → remove it
     pgSql = pgSql.replace(/AUTOINCREMENT/g, '');
     // DATETIME → TIMESTAMP
     pgSql = pgSql.replace(/DATETIME/g, 'TIMESTAMP');
