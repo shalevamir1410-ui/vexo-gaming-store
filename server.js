@@ -1117,16 +1117,26 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     
+    console.log('Login attempt for:', email);
+    
     db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
         if (err) {
+            console.error('Database error during login:', err);
             return res.status(500).json({ error: 'Server error' });
         }
         
         if (!user) {
+            console.log('User not found:', email);
             return res.status(400).json({ error: 'Invalid credentials' });
         }
         
+        console.log('User found, checking password...');
+        console.log('Stored password hash:', user.password ? user.password.substring(0, 20) + '...' : 'null');
+        console.log('Plain password exists:', !!user.plain_password);
+        
         const isValidPassword = await bcrypt.compare(password, user.password);
+        console.log('Password valid:', isValidPassword);
+        
         if (!isValidPassword) {
             return res.status(400).json({ error: 'Invalid credentials' });
         }
