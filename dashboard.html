@@ -1281,7 +1281,7 @@
                 document.getElementById('colorWhite').checked = false;
                 document.getElementById('maxQuantity').value = 10;
                 currentImages = [];
-                updateGalleryPreview();
+                updateGalleryDisplay();
             }
             
             modal.style.display = 'flex';
@@ -1538,7 +1538,7 @@
                 // ניקוי גלריה קודמת והוספת תמונות חדשות
                 if (result.images && result.images.length > 0) {
                     currentImages = []; // ניקוי מערך התמונות
-                    updateGalleryPreview(); // רענון התצוגה
+                    updateGalleryDisplay(); // רענון התצוגה
                     
                     // הוספת התמונות לגלריה
                     result.images.forEach((img, index) => {

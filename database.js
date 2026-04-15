@@ -299,6 +299,18 @@ async function initializePostgresTables() {
             )
         `);
         
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS dsers_connections (
+                id SERIAL PRIMARY KEY,
+                consumer_key TEXT NOT NULL,
+                consumer_secret TEXT NOT NULL,
+                user_id INTEGER,
+                scope TEXT,
+                callback_url TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
         client.release();
         console.log('PostgreSQL tables initialized successfully.');
     } catch (err) {
