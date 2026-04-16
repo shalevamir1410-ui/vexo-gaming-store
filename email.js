@@ -130,9 +130,20 @@ const EMAIL_TEMPLATES = {
                     <p>ביקשת לאפס את הסיסמה שלך.</p>
                     <p>לחץ על הלינק למטה כדי לאפס את הסיסמה:</p>
                     
-                    <p style="text-align: center; margin: 20px 0;">
-                        <a href="${resetLink}" style="display: inline-block; color: #0066cc; text-decoration: underline; font-size: 16px; padding: 10px 20px;">לחץ כאן לאיפוס סיסמה</a>
-                    </p>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <a href="${resetLink}" style="
+                            background-color: #007bff;
+                            color: white;
+                            padding: 12px 25px;
+                            text-decoration: none;
+                            border-radius: 5px;
+                            display: inline-block;
+                            font-weight: bold;
+                            margin: 20px 0;
+                            border: none;
+                            cursor: pointer;
+                        ">לחץ כאן לאיפוס סיסמה</a>
+                    </div>
                     
                     <p style="font-size: 12px; color: #666;">אם הלינק לא עובה, העתק והדבק את הלינק הזה בדפדפן:</p>
                     <p style="word-break: break-all; font-size: 11px; color: #0066cc;">${resetLink}</p>
