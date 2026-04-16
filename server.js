@@ -9,6 +9,7 @@ const multer = require('multer');
 const cron = require('node-cron');
 const path = require('path');
 const fs = require('fs');
+const { sendOrderConfirmation, sendShippingUpdate, sendPasswordReset } = require('./email');
 
 // Load environment variables from .env file (for local development)
 require('dotenv').config();
@@ -1158,19 +1159,50 @@ app.post('/api/admin/login', (req, res) => {
     }
 });
 
-// Password reset
-app.post('/api/reset-password', async (req, res) => {
-    const { email, newPassword } = req.body;
+// Password reset request - sends email
+app.post('/api/request-password-reset', async (req, res) => {
+    const { email } = req.body;
     
-    if (!email || !newPassword || newPassword.length < 6) {
-        return res.status(400).json({ error: 'Invalid email or password' });
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+    }
+    
+    // Check if user exists
+    db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
+        if (err) {
+            return res.status(500).json({ error: 'Server error' });
+        }
+        
+        // Always return success (to prevent email enumeration)
+        // But only send email if user exists
+        if (user) {
+            // Generate reset token (valid for 24 hours)
+            const resetToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '24h' });
+            const resetLink = `https://vexo-gaming-store.onrender.com/reset-password?token=${resetToken}`;
+            
+            await sendPasswordReset(email, resetLink);
+        }
+        
+        res.json({ message: 'If the email exists, a reset link has been sent' });
+    });
+});
+
+// Password reset - actually resets the password
+app.post('/api/reset-password', async (req, res) => {
+    const { token, newPassword } = req.body;
+    
+    if (!token || !newPassword || newPassword.length < 6) {
+        return res.status(400).json({ error: 'Invalid token or password' });
     }
     
     try {
+        // Verify token
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         
         db.run('UPDATE users SET password = ?, plain_password = ? WHERE email = ?',
-            [hashedPassword, newPassword, email],
+            [hashedPassword, newPassword, decoded.email],
             function(err) {
                 if (err) {
                     return res.status(500).json({ error: 'Failed to reset password' });
@@ -1182,7 +1214,7 @@ app.post('/api/reset-password', async (req, res) => {
             }
         );
     } catch (error) {
-        res.status(500).json({ error: 'Server error' });
+        res.status(400).json({ error: 'Invalid or expired token' });
     }
 });
 
@@ -1334,10 +1366,21 @@ app.post('/api/orders', authenticateToken, (req, res) => {
     
     db.run('INSERT INTO orders (product_name, items_json, revenue, cost, profit, customer_name, customer_email, shipping_address, supplier_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
         [product_name, items_json, revenue, cost, profit, req.user.name, req.user.email, shippingAddress, supplierNotes], 
-        function(err) {
+        async function(err) {
             if (err) {
                 return res.status(500).json({ error: 'Failed to create order' });
             }
+            
+            // Send order confirmation email
+            const order = {
+                id: this.lastID,
+                created_at: new Date().toISOString(),
+                shipping_address: shippingAddress,
+                items_json: items_json,
+                revenue: revenue
+            };
+            await sendOrderConfirmation(order, req.user.email, req.user.name);
+            
             res.json({ id: this.lastID, message: 'Order created successfully', supplierNotes });
         }
     );
@@ -1349,10 +1392,18 @@ app.put('/api/orders/:id/tracking', authenticateAdmin, (req, res) => {
     
     db.run('UPDATE orders SET trackingNumber = ?, carrier = ? WHERE id = ?', 
         [trackingNumber, carrier || 'israel_post', req.params.id], 
-        function(err) {
+        async function(err) {
             if (err) {
                 return res.status(500).json({ error: 'Failed to update tracking' });
             }
+            
+            // Send shipping update email
+            db.get('SELECT * FROM orders WHERE id = ?', [req.params.id], async (err, order) => {
+                if (order && order.customer_email) {
+                    await sendShippingUpdate(order, trackingNumber, carrier || 'israel_post', order.customer_email);
+                }
+            });
+            
             res.json({ message: 'Tracking updated successfully' });
         }
     );
