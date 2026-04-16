@@ -149,6 +149,12 @@ const EMAIL_TEMPLATES = {
                     <p>הלינק תקף ל-24 שעות.</p>
                     <p>אם לא ביקשת איפוס סיסמה, התעלם מהודעה זו.</p>
                     
+                    <hr style="margin: 30px 0;">
+                    
+                    <p>אם הכפתור למעלה לא מגיב, העתק והדבק את הכתובת המלאה הבאה בדפדפן שלך:</p>
+                    <br><br>
+                    <p style="word-break: break-all; font-size: 14px;">${resetLink}</p>
+                    
                     <div class="footer">
                         <p>© 2024 VEXO Gaming Store. כל הזכויות שמורות.</p>
                     </div>
