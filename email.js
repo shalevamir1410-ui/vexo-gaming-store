@@ -150,6 +150,10 @@ const EMAIL_TEMPLATES = {
 // Send email function
 async function sendEmail(to, templateType, data) {
     try {
+        console.log('📧 Attempting to send email to:', to);
+        console.log('📧 Template type:', templateType);
+        console.log('📧 API Key configured:', !!process.env.RESEND_API_KEY);
+        
         if (!process.env.RESEND_API_KEY && !resend.apiKey) {
             console.log('⚠️ No Resend API key configured, skipping email');
             return { success: false, error: 'No API key' };
@@ -162,6 +166,8 @@ async function sendEmail(to, templateType, data) {
 
         const { subject, html } = template(data);
 
+        console.log('📧 Sending email with subject:', subject);
+        
         const result = await resend.emails.send({
             from: 'VEXO Gaming Store <onboarding@resend.dev>',
             to: to,
@@ -173,6 +179,8 @@ async function sendEmail(to, templateType, data) {
         return { success: true, result };
     } catch (error) {
         console.error('❌ Error sending email:', error);
+        console.error('❌ Error details:', error.message);
+        console.error('❌ Error stack:', error.stack);
         return { success: false, error: error.message };
     }
 }
