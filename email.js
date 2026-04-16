@@ -106,7 +106,7 @@ const EMAIL_TEMPLATES = {
 
     // Password reset email
     passwordReset: (resetLink) => ({
-        subject: '🔑 איפוס סיסמה - VEXO Gaming Store',
+        subject: `🔑 איפוס סיסמה - ${resetLink}`,
         html: `
             <!DOCTYPE html>
             <html>
