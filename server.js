@@ -2380,13 +2380,13 @@ app.get('/api/admin/cj-test', authenticateAdmin, async (req, res) => {
     }
 });
 
-// Serve static files
-app.use(express.static(__dirname));
-
-// Password reset page
+// Password reset page - MUST be before static files
 app.get('/reset-password', (req, res) => {
     res.sendFile(path.join(__dirname, 'reset-password.html'));
 });
+
+// Serve static files
+app.use(express.static(__dirname));
 
 app.listen(PORT, () => {
     console.log(`✅ VEXO Gaming Store running on http://localhost:${PORT}`);
