@@ -1178,7 +1178,7 @@ app.post('/api/request-password-reset', async (req, res) => {
         if (user) {
             // Generate reset token (valid for 24 hours)
             const resetToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '24h' });
-            const resetLink = `https://vexo-gaming-store.onrender.com/reset-password?token=${resetToken}`;
+            const resetLink = `${getBaseUrl(req)}/reset-password?token=${resetToken}`;
             
             await sendPasswordReset(email, resetLink);
         }
@@ -2378,6 +2378,14 @@ app.get('/api/admin/cj-test', authenticateAdmin, async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: 'Test failed', details: error.message });
     }
+});
+
+// Serve static files
+app.use(express.static(__dirname));
+
+// Password reset page
+app.get('/reset-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'reset-password.html'));
 });
 
 app.listen(PORT, () => {
