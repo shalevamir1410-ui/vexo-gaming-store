@@ -1178,7 +1178,7 @@ app.post('/api/request-password-reset', async (req, res) => {
         if (user) {
             // Generate reset token (valid for 24 hours)
             const resetToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '24h' });
-            const resetLink = `${getServerUrl(req)}/reset-password?token=${resetToken}`;
+            const resetLink = `https://vexo-gaming-store.onrender.com/reset-password?token=${resetToken}`;
             
             await sendPasswordReset(email, resetLink);
         }
