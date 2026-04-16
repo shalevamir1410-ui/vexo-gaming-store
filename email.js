@@ -128,25 +128,23 @@ const EMAIL_TEMPLATES = {
                     </div>
                     <h2>איפוס סיסמה</h2>
                     <p>ביקשת לאפס את הסיסמה שלך.</p>
-                    <p>לחץ על הלינק למטה כדי לאפס את הסיסמה:</p>
+                    <p>לחץ על הכפתור למטה כדי לאפס את הסיסמה:</p>
                     
-                    <div style="text-align: center; margin: 20px 0;">
-                        <a href="${resetLink}" style="
-                            background-color: #007bff;
-                            color: white;
-                            padding: 12px 25px;
-                            text-decoration: none;
-                            border-radius: 5px;
-                            display: inline-block;
-                            font-weight: bold;
-                            margin: 20px 0;
-                            border: none;
-                            cursor: pointer;
-                        ">לחץ כאן לאיפוס סיסמה</a>
-                    </div>
+                    <a href="${resetLink}" style="
+                        background-color: #007bff;
+                        color: white;
+                        padding: 12px 25px;
+                        text-decoration: none;
+                        border-radius: 5px;
+                        display: inline-block;
+                        font-weight: bold;
+                        margin: 20px 0;
+                        border: none;
+                        cursor: pointer;
+                    ">לחץ כאן לאיפוס סיסמה</a>
                     
-                    <p style="font-size: 12px; color: #666;">אם הלינק לא עובה, העתק והדבק את הלינק הזה בדפדפן:</p>
-                    <p style="word-break: break-all; font-size: 11px; color: #0066cc;">${resetLink}</p>
+                    <p style="font-size: 12px; color: #666;">אם הכפתור לא עובד, העתק והדבק את הקישור הבא בדפדפן:</p>
+                    <p style="word-break: break-all; font-size: 11px; color: #0066cc;">${encodeURI(resetLink)}</p>
                     
                     <p>הלינק תקף ל-24 שעות.</p>
                     <p>אם לא ביקשת איפוס סיסמה, התעלם מהודעה זו.</p>
