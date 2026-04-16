@@ -619,6 +619,9 @@
                     <i class="fas fa-eye eye-icon" onclick="togglePassword('passL', this)"></i>
                 </div>
                 <button class="btn btn-buy" style="width:100%" onclick="login()">התחברות</button>
+                <p style="text-align:center; font-size:12px; color:#ff0000; cursor:pointer; margin-top:10px"
+                    onclick="requestPasswordReset()">
+                    שכחתי סיסמה</p>
                 <p style="text-align:center; font-size:12px; color:#555; cursor:pointer"
                     onclick="document.getElementById('formL').style.display='none'; document.getElementById('formR').style.display='block'">
                     צור חשבון חדש</p>
@@ -1449,6 +1452,26 @@
             } catch (e) {
                 console.error('Login error:', e);
                 showToast('שגיאת רשת - בדוק חיבור אינטרנט', true);
+            }
+        }
+
+        async function requestPasswordReset() {
+            const email = document.getElementById('emailL').value.trim();
+            
+            if (!email) {
+                showToast('אנא הכנס את האימייל שלך בשדה האימייל', true);
+                return;
+            }
+            
+            showToast('שולח לינק לאיפוס סיסמה...');
+            
+            const res = await fetchApi('/api/request-password-reset', 'POST', { email });
+            
+            if (res) {
+                showToast('אם האימייל קיים במערכת, נשלח לינק לאיפוס לתיבת המייל שלך');
+                document.getElementById('authModal').style.display = 'none';
+            } else {
+                showToast('שגיאה בשליחת הלינק', true);
             }
         }
 
