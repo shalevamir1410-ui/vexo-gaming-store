@@ -255,46 +255,6 @@
             position: relative;
         }
 
-        /* Password wrapper with eye icon */
-        .password-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .password-wrapper input {
-            flex: 1;
-            padding: 12px 15px;
-            padding-left: 40px;
-            background: #111;
-            border: 1px solid #333;
-            border-radius: 8px;
-            color: white;
-            font-size: 15px;
-            font-family: 'Outfit', sans-serif;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .password-wrapper input:focus {
-            outline: none;
-            border-color: var(--primary-red);
-        }
-
-        .eye-icon {
-            position: absolute;
-            left: 12px;
-            cursor: pointer;
-            color: #888;
-            font-size: 16px;
-            transition: 0.2s;
-        }
-
-        .eye-icon:hover {
-            color: var(--primary-red);
-        }
-
         .cart-drawer {
             position: fixed;
             top: 0;
@@ -427,140 +387,6 @@
             border-collapse: collapse;
             margin-top: 20px;
         }
-        /* Mobile Responsive Styles */
-        @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                padding: 10px;
-                gap: 10px;
-            }
-            
-            .header-group {
-                width: 100%;
-                justify-content: space-between;
-            }
-            
-            .logo {
-                font-size: 24px;
-            }
-            
-            .search-container {
-                width: 100%;
-                max-width: 100%;
-            }
-            
-            .category-bar {
-                overflow-x: auto;
-                flex-wrap: nowrap;
-                padding: 10px;
-                gap: 10px;
-            }
-            
-            .cat-item {
-                flex-shrink: 0;
-                padding: 8px 15px;
-                font-size: 14px;
-            }
-            
-            .product-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-                padding: 15px;
-            }
-            
-            .product-card {
-                min-height: 320px;
-            }
-            
-            .product-img {
-                height: 180px;
-            }
-            
-            .product-info h3 {
-                font-size: 14px;
-            }
-            
-            .product-price {
-                font-size: 18px;
-            }
-            
-            .cart-sidebar {
-                width: 100%;
-                right: -100%;
-            }
-            
-            .modal-content {
-                width: 95%;
-                max-width: 95%;
-                margin: 10px auto;
-                max-height: 90vh;
-            }
-            
-            .auth-form input {
-                font-size: 16px; /* Prevent zoom on iOS */
-            }
-            
-            .hero-stats {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .stat-box {
-                min-width: 100%;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .product-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-                padding: 10px;
-            }
-            
-            .logo {
-                font-size: 20px;
-            }
-            
-            .user-auth-btn {
-                padding: 8px 12px;
-                font-size: 14px;
-            }
-            
-            .cart-icon {
-                width: 40px;
-                height: 40px;
-            }
-            
-            .product-card {
-                min-height: 280px;
-            }
-            
-            .product-img {
-                height: 160px;
-            }
-            
-            .btn-glow {
-                padding: 10px 20px;
-                font-size: 14px;
-            }
-        }
-        
-        /* Prevent horizontal scroll */
-        body {
-            overflow-x: hidden;
-        }
-        
-        /* Smooth scrolling */
-        html {
-            scroll-behavior: smooth;
-        }
-        
-        /* Touch-friendly buttons */
-        @media (pointer: coarse) {
-            .cat-item, .btn-glow, .user-auth-btn, .cart-icon {
-                min-height: 44px;
-            }
-        }
     </style>
 </head>
 
@@ -576,8 +402,7 @@
         <div class="search-container">
             <i class="fas fa-search"></i>
             <input type="search" id="vexoSearchInput" placeholder="חפש כאן ציוד גיימינג..." onkeyup="handleSearch()"
-                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-                name="search" readonly onmouseover="this.removeAttribute('readonly')"
+                autocomplete="off" readonly onmouseover="this.removeAttribute('readonly')"
                 onfocus="this.removeAttribute('readonly')">
         </div>
         <div class="header-group">
@@ -601,7 +426,6 @@
         <div class="cat-item" onclick="filterByCat('מיקרופונים')">מיקרופונים</div>
         <div class="cat-item" onclick="filterByCat('מפצלים ומתאמים')">מפצלים ומתאמים</div>
         <div class="cat-item" onclick="filterByCat('מגדילי טווח WiFi')">מגדילי טווח WiFi</div>
-        <div class="cat-item" onclick="filterByCat('לדים גיימינג לחדר')">לדים גיימינג לחדר</div>
     </nav>
 
     <div class="container">
@@ -614,28 +438,32 @@
             <div id="formL" class="auth-form">
                 <h2 style="text-align:center; color:var(--primary-red); font-family:'Orbitron'">LOGIN</h2>
                 <input type="email" id="emailL" placeholder="אימייל">
-                <div class="password-wrapper">
-                    <input type="password" id="passL" placeholder="סיסמה">
-                    <i class="fas fa-eye eye-icon" onclick="togglePassword('passL', this)"></i>
-                </div>
+                <input type="password" id="passL" placeholder="סיסמה">
                 <button class="btn btn-buy" style="width:100%" onclick="login()">התחברות</button>
-                <p style="text-align:center; font-size:12px; color:#ff0000; cursor:pointer; margin-top:10px"
-                    onclick="requestPasswordReset()">
-                    שכחתי סיסמה</p>
+                <p style="text-align:center; font-size:12px; margin-top:8px;">
+                    <a href="#" onclick="showForgotForm()" style="color:var(--primary-red); text-decoration:none; font-size:12px;">שכחתי סיסמה</a>
+                </p>
                 <p style="text-align:center; font-size:12px; color:#555; cursor:pointer"
                     onclick="document.getElementById('formL').style.display='none'; document.getElementById('formR').style.display='block'">
                     צור חשבון חדש</p>
+            </div>
+            <!-- FORGOT PASSWORD FORM -->
+            <div id="formForgot" class="auth-form" style="display:none">
+                <h2 style="text-align:center; color:var(--primary-red); font-family:'Orbitron'; font-size:18px">שכחתי סיסמה</h2>
+                <p style="text-align:center; color:#aaa; font-size:13px; margin-bottom:15px;">הכנס את האימייל שלך ונשלח לך קישור לאיפוס</p>
+                <input type="email" id="emailForgot" placeholder="האימייל שלך">
+                <button class="btn btn-buy" style="width:100%" onclick="sendForgotEmail()">שלח קישור לאיפוס</button>
+                <div id="forgotMsg" style="text-align:center; font-size:13px; margin-top:12px; display:none;"></div>
+                <p style="text-align:center; font-size:12px; color:#555; cursor:pointer; margin-top:12px;"
+                    onclick="document.getElementById('formForgot').style.display='none'; document.getElementById('formL').style.display='block'">
+                    חזור להתחברות</p>
             </div>
             <div id="formR" class="auth-form" style="display:none">
                 <h2 style="text-align:center; color:var(--primary-red); font-family:'Orbitron'">REGISTER</h2>
                 <input type="text" id="nameR" placeholder="שם מלא">
                 <input type="email" id="emailR" placeholder="אימייל">
-                <div class="password-wrapper">
-                    <input type="password" id="passR" placeholder="סיסמה (6+ תווים)">
-                    <i class="fas fa-eye eye-icon" onclick="togglePassword('passR', this)"></i>
-                </div>
+                <input type="password" id="passR" placeholder="סיסמה (6+ תווים)">
                 <input type="text" id="addrR" placeholder="כתובת למשלוח">
-                <input type="tel" id="phoneR" placeholder="מספר טלפון (לדוגמה: 0501234567)">
                 <button class="btn btn-buy" style="width:100%" onclick="register()">הרשמה וסיום</button>
                 <p style="text-align:center; font-size:12px; color:#555; cursor:pointer"
                     onclick="document.getElementById('formR').style.display='none'; document.getElementById('formL').style.display='block'">
@@ -673,25 +501,20 @@
                     <span style="color:#aaa; font-size:14px;">כמות:</span>
                     <div
                         style="display:flex; align-items:center; gap:10px; background:#111; border:1px solid #333; border-radius:8px; padding:5px 10px;">
-                        <button id="qtyMinus" onclick="changeQty(-1)"
-                            style="background:none; border:none; color:white; font-size:20px; cursor:pointer; line-height:1; opacity:0.5;">−</button>
+                        <button onclick="changeQty(-1)"
+                            style="background:none; border:none; color:white; font-size:20px; cursor:pointer; line-height:1;">−</button>
                         <span id="qtyDisplay"
                             style="font-size:18px; font-weight:bold; min-width:20px; text-align:center;">1</span>
-                        <button id="qtyPlus" onclick="changeQty(1)"
+                        <button onclick="changeQty(1)"
                             style="background:none; border:none; color:white; font-size:20px; cursor:pointer; line-height:1;">+</button>
                     </div>
                 </div>
 
-                <!-- PayPal SDK (הכפתור הצהוב) -->
-                <div id="paypal-btn" style="margin-bottom:15px;"></div>
-
-                <!-- כפתור תשלום באשראי - מעביר לדף PayPal -->
-                <button class="btn btn-buy" style="width:100%; background:#333; margin-bottom:15px;" onclick="payWithCreditCard()">
-                    <i class="fas fa-credit-card"></i> כרטיס אשראי
-                </button>
+                <!-- PayPal -->
+                <div id="paypal-btn" style="margin-bottom:10px;"></div>
 
                 <!-- הוסף לעגלה -->
-                <button class="btn btn-cart" style="width:100%;" onclick="addToCartActive()">
+                <button class="btn btn-cart" style="width:100%; margin-top:10px;" onclick="addToCartActive()">
                     <i class="fas fa-cart-plus"></i> הוסף לעגלה
                 </button>
             </div>
@@ -710,14 +533,12 @@
         </div>
         <div id="cartItems" style="flex:1; overflow-y:auto; padding:20px;"></div>
         <div style="padding:25px; border-top:1px solid #222; background:#080808">
-            <div style="display:flex; justify-content:space-between; margin-bottom:20px; font-size:20px; font-weight:700">
-                <span id="cartTotal">₪0</span><span>סה"כ:</span></div>
-            <!-- PayPal SDK בעגלה -->
-            <div id="paypal-cart-btn" style="margin-bottom:15px;"></div>
-            <!-- כפתור תשלום באשראי בעגלה -->
-            <button class="btn btn-buy" style="width:100%; background:#333; margin-bottom:15px; font-size:16px" onclick="payCartWithCreditCard()">
-                <i class="fas fa-credit-card"></i> כרטיס אשראי
-            </button>
+            <div
+                style="display:flex; justify-content:space-between; margin-bottom:20px; font-size:20px; font-weight:700">
+                <span id="cartTotal">₪0</span><span>סה"כ:</span>
+            </div>
+            <button class="btn btn-buy" style="width:100%; font-size:16px" onclick="checkout()"><i
+                    class="fas fa-credit-card"></i> לתשלום מאובטח</button>
         </div>
     </div>
 
@@ -751,28 +572,14 @@
                 if (body) opt.body = JSON.stringify(body);
                 const res = await fetch(u, opt);
 
-                // קריאת תשובה כטקסט קודם
-                const responseText = await res.text();
-                let data;
-                
-                try {
-                    data = JSON.parse(responseText);
-                } catch (e) {
-                    // אם לא JSON, החזר כשגיאה
-                    return { error: responseText || 'Server error', status: res.status };
-                }
-                
-                // אם התשובה לא OK, החזר את השגיאה כדי שניתן יהיה להציג אותה
-                if (!res.ok) {
-                    console.error("API Error:", res.status, data);
-                    return { error: data.error || 'Server error', status: res.status, ...data };
-                }
-                
+                // --- FIX: Check if response is actually JSON before parsing ---
+                const contentType = res.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) return null;
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Server error');
                 return data;
-            } catch (e) { 
-                console.error("API Error:", e.message); 
-                return { error: e.message || 'Network error' };
-            }
+            } catch (e) { console.error("API Error:", e.message); return null; }
         }
 
         function showToast(m, err = false) {
@@ -783,21 +590,8 @@
         }
 
         async function init() {
-            // ניקוי שדה החיפוש למניעת מילוי אוטומטי של אימייל
-            const searchInput = document.getElementById('vexoSearchInput');
-            if (searchInput) {
-                searchInput.value = '';
-                searchInput.setAttribute('autocomplete', 'off');
-                searchInput.setAttribute('data-lpignore', 'true');
-            }
-            
-            // בדיקה אם המשתמש מחובר
-            if (token && currentUser) {
-                console.log('User logged in');
-                updateUI();
-            }
-            
-            updateCartCounter();
+            updateUI();
+            updateCartCounter(); // Load from LocalStorage IMMEDIATELY
 
             // Visitor Tracking
             fetchApi('/api/stats/visit', 'POST').catch(() => { });
@@ -843,92 +637,27 @@
             if (currentUser) await fetchApi('/api/user/cart', 'POST', { cart });
         }
         function addToCartActive() {
-            // בדיקת צבע נבחר אם יש צבעים זמינים
-            let selectedColor = null;
-            if (activeProduct.colors) {
-                const colors = JSON.parse(activeProduct.colors);
-                if (colors.length > 0) {
-                    const selected = document.querySelector('input[name="selectedColor"]:checked');
-                    if (!selected) {
-                        showToast('אנא בחר צבע', true);
-                        return;
-                    }
-                    selectedColor = selected.value;
-                }
-            }
-            
-            // בדיקת מקסימום כמות בעגלה
-            const existingQty = cart.filter(item => item.id === activeProduct.id).length;
-            const maxQty = activeProduct?.maxQuantity ?? 10;
-            if (existingQty + currentQty > maxQty) {
-                showToast(`מקסימום ${maxQty} יחידות למוצר זה. יש לך כבר ${existingQty} בעגלה.`, true);
-                return;
-            }
-            
-            for (let i = 0; i < currentQty; i++) cart.push({ ...activeProduct, qty: 1, selectedColor });
+            for (let i = 0; i < currentQty; i++) cart.push({ ...activeProduct, qty: 1 });
             updateCartCounter();
             showToast(`נוספו ${currentQty} יחידות 🛒`);
             if (currentUser) fetchApi('/api/user/cart', 'POST', { cart });
             document.getElementById('detailsModal').style.display = 'none';
         }
-
+        function changeQty(delta) {
+            const stock = activeProduct?.stock ?? 99;
+            currentQty = Math.max(1, Math.min(stock, currentQty + delta));
+            document.getElementById('qtyDisplay').innerText = currentQty;
+        }
         function updateCartCounter() {
             localStorage.setItem('vexoCart', JSON.stringify(cart));
             const badge = document.getElementById('cart-count');
             if (badge) badge.innerText = cart.length;
         }
 
-        function togglePassword(inputId, icon) {
-            const input = document.getElementById(inputId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        }
-
         function toggleCart(o) {
             const d = document.getElementById('cartDrawer'), ov = document.getElementById('cartOverlay');
-            if (o) { renderCart(); renderCartPaypal(); d.classList.add('open'); ov.style.display = 'block'; }
+            if (o) { renderCart(); d.classList.add('open'); ov.style.display = 'block'; }
             else { d.classList.remove('open'); ov.style.display = 'none'; }
-        }
-
-        function renderCartPaypal() {
-            const c = document.getElementById('paypal-cart-btn');
-            c.innerHTML = '';
-            if (!currentUser) { 
-                c.innerHTML = '<p style="font-size:12px; color:orange; text-align:center">התחבר כדי לשלם</p>'; 
-                return; 
-            }
-            if (!cart.length) { 
-                c.innerHTML = '<p style="font-size:12px; color:#555; text-align:center">העגלה ריקה</p>'; 
-                return; 
-            }
-            // חישוב סכום כולל
-            let total = 0;
-            cart.forEach(item => total += parseFloat(item.price) || 0);
-            
-            paypal.Buttons({
-                fundingSource: paypal.FUNDING.PAYPAL,
-                style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'paypal' },
-                createOrder: (d, a) => a.order.create({ 
-                    purchase_units: [{ 
-                        amount: { currency_code: 'ILS', value: total.toFixed(2) },
-                        description: 'הזמנה מ-VEXO Gaming'
-                    }] 
-                }),
-                onApprove: (d, a) => a.order.capture().then(async (dat) => {
-                    const res = await fetchApi('/api/checkout', 'POST', { cart: cart, paymentId: dat.id });
-                    if (res) { 
-                        showToast("תודה רבה! הזמנה בוצעה. 🎉"); 
-                        cart = []; updateCartCounter(); toggleCart(false);
-                    }
-                })
-            }).render('#paypal-cart-btn');
         }
 
         function renderCart() {
@@ -963,6 +692,21 @@
             if (res) { showToast("נרשמת בהצלחה! התחבר עכשיו."); document.getElementById('formR').style.display = 'none'; document.getElementById('formL').style.display = 'block'; }
         }
 
+        function showForgotForm() {
+            document.getElementById('formL').style.display = 'none';
+            document.getElementById('formForgot').style.display = 'block';
+        }
+
+        async function sendForgotEmail() {
+            const email = document.getElementById('emailForgot').value.trim();
+            const msgEl = document.getElementById('forgotMsg');
+            if (!email) { msgEl.style.display='block'; msgEl.style.color='#ff6b6b'; msgEl.textContent='הכנס אימייל'; return; }
+            await fetchApi('/api/auth/forgot-password', 'POST', { email });
+            msgEl.style.display = 'block';
+            msgEl.style.color = '#27ae60';
+            msgEl.textContent = 'אם המייל קיים במערכת - קישור לאיפוס נשלח אליך';
+        }
+
         let galleryImages = [];
         let galleryIndex = 0;
 
@@ -975,7 +719,7 @@
         function updateGalleryDots() {
             const dots = document.getElementById('galleryDots');
             dots.innerHTML = galleryImages.map((_, i) =>
-                `<span onclick="galleryGoTo(${i})" style="width:8px;height:8px;border-radius:50%;background:${i === galleryIndex ? 'white' : 'rgba(255,255,255,0.4)'};cursor:pointer;display:inline-block;transition:0.2s;"></span>` 
+                `<span onclick="galleryGoTo(${i})" style="width:8px;height:8px;border-radius:50%;background:${i === galleryIndex ? 'white' : 'rgba(255,255,255,0.4)'};cursor:pointer;display:inline-block;transition:0.2s;"></span>`
             ).join('');
         }
 
@@ -987,19 +731,10 @@
 
         function openDetails(id) {
             activeProduct = allProducts.find(x => x.id === id);
-            const stockEl = document.getElementById('detStock');
-            if (activeProduct.stock !== null && activeProduct.stock !== undefined && activeProduct.stock !== '') {
-                if (activeProduct.stock <= 0) {
-                    stockEl.innerHTML = '<span style="color:#e74c3c;"><i class="fas fa-times-circle"></i> אזל המלאי</span>';
-                } else if (activeProduct.stock <= 5) {
-                    stockEl.innerHTML = `<span style="color:#f39c12;"><i class="fas fa-exclamation-triangle"></i> נשארו ${activeProduct.stock} בלבד!</span>`;
-                } else {
-                    stockEl.innerHTML = `<span style="color:#27ae60;"><i class="fas fa-check-circle"></i> במלאי (${activeProduct.stock})</span>`;
-                }
-            } else {
-                stockEl.innerHTML = '<span style="color:#27ae60;"><i class="fas fa-check-circle"></i> זמין</span>';
-            }
-            
+            if (!activeProduct) return;
+            currentQty = 1;
+            document.getElementById('qtyDisplay').innerText = 1;
+
             // בניית גלריה: תמונה ראשית + gallery
             let extra = [];
             try { extra = JSON.parse(activeProduct.gallery || '[]'); } catch (e) { extra = []; }
@@ -1015,364 +750,30 @@
             updateGalleryDots();
             document.getElementById('detName').innerText = activeProduct.name;
             document.getElementById('detPrice').innerText = '₪' + activeProduct.price;
-            
-            // איפוס כמות
-            currentQty = 1;
-            document.getElementById('qtyDisplay').innerText = currentQty;
-            
-            // הצגת בחירת צבע אם יש צבעים זמינים
-            let colorsHtml = '';
-            let descriptionHtml = activeProduct.description || '';
-            
-            // טיפול בצבעים - ניסיון לפרסר אם מחרוזת JSON
-            let colors = [];
-            if (activeProduct.colors) {
-                try {
-                    colors = typeof activeProduct.colors === 'string' ? JSON.parse(activeProduct.colors) : activeProduct.colors;
-                } catch (e) {
-                    console.log('Error parsing colors:', e);
-                }
+            document.getElementById('detDesc').innerText = activeProduct.description || '';
+            const stock = activeProduct.stock;
+            const stockEl = document.getElementById('detStock');
+            if (stock !== null && stock !== undefined && stock !== '') {
+                if (stock <= 0) stockEl.innerHTML = '<span style="color:#e74c3c;"><i class="fas fa-times-circle"></i> אזל המלאי</span>';
+                else if (stock <= 5) stockEl.innerHTML = `<span style="color:#f39c12;"><i class="fas fa-exclamation-triangle"></i> נישארו ${stock} בלבד!</span>`;
+                else stockEl.innerHTML = `<span style="color:#27ae60;"><i class="fas fa-check-circle"></i> במלאי</span>`;
+            } else {
+                stockEl.innerHTML = '<span style="color:#27ae60;"><i class="fas fa-check-circle"></i> זמין</span>';
             }
-            
-            if (colors.length > 0) {
-                colorsHtml = `
-                    <div style="margin: 15px 0; text-align: right;">
-                        <span style="color: #aaa; font-size: 14px; display: block; margin-bottom: 8px;">צבע:</span>
-                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                            ${colors.map(color => `
-                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #111; padding: 8px 12px; border-radius: 6px; border: 2px solid #333;" class="color-option">
-                                    <input type="radio" name="selectedColor" value="${color}" ${colors.length === 1 ? 'checked' : ''} style="width: auto; margin: 0;">
-                                    <span>${color === 'שחור' ? '⚫' : '⚪'} ${color}</span>
-                                </label>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-                descriptionHtml = colorsHtml + '<br>' + descriptionHtml;
-            }
-            
-            // הוספת התראת מקסימום כמות אם יש
-            const maxQty = activeProduct.maxQuantity || 10;
-            if (maxQty === 1) {
-                descriptionHtml = '<div style="color: #ff6b6b; margin-bottom: 10px;">⚠️ מוגבל ל-1 יחידה בהזמנה</div>' + descriptionHtml;
-            }
-            
-            document.getElementById('detDesc').innerHTML = descriptionHtml;
-            
-            // עדכון מצב כפתורי כמות
-            updateQtyButtons();
-            
             document.getElementById('detailsModal').style.display = 'flex';
-            
-            // טען כפתור PayPal
             renderPaypal();
-        }
-
-        function updateQtyButtons() {
-            const maxQty = activeProduct?.maxQuantity ?? 10;
-            const stock = activeProduct?.stock ?? 99;
-            const limit = Math.min(maxQty, stock);
-            
-            const minusBtn = document.getElementById('qtyMinus');
-            const plusBtn = document.getElementById('qtyPlus');
-            
-            if (minusBtn) {
-                minusBtn.style.opacity = currentQty <= 1 ? '0.3' : '1';
-                minusBtn.style.cursor = currentQty <= 1 ? 'not-allowed' : 'pointer';
-            }
-            if (plusBtn) {
-                plusBtn.style.opacity = currentQty >= limit ? '0.3' : '1';
-                plusBtn.style.cursor = currentQty >= limit ? 'not-allowed' : 'pointer';
-            }
-        }
-
-        function changeQty(delta) {
-            const maxQty = activeProduct?.maxQuantity ?? 10;
-            const stock = activeProduct?.stock ?? 99;
-            const limit = Math.min(maxQty, stock);
-            
-            const newQty = currentQty + delta;
-            if (newQty < 1 || newQty > limit) {
-                if (newQty > limit) {
-                    showToast(`מקסימום ${maxQty} יחידות למוצר זה`, true);
-                }
-                return;
-            }
-            
-            currentQty = newQty;
-            document.getElementById('qtyDisplay').innerText = currentQty;
-            updateQtyButtons();
         }
 
         function renderPaypal() {
-            const c = document.getElementById('paypal-btn');
-            c.innerHTML = '';
-            if (!currentUser) { 
-                c.innerHTML = '<p style="font-size:12px; color:orange; text-align:center">התחבר כדי לשלם</p>'; 
-                return; 
-            }
+            const c = document.getElementById('paypal-btn'); c.innerHTML = '';
+            if (!currentUser) { c.innerHTML = '<p style="font-size:12px; color:orange; text-align:center">התחבר כדי לשלם</p>'; return; }
             paypal.Buttons({
-                fundingSource: paypal.FUNDING.PAYPAL, // רק PayPal, בלי כרטיס אשראי אוטומטי
-                style: {
-                    layout: 'vertical',
-                    color: 'gold',
-                    shape: 'rect',
-                    label: 'paypal'
-                },
                 createOrder: (d, a) => a.order.create({ purchase_units: [{ amount: { currency_code: 'ILS', value: activeProduct.price } }] }),
                 onApprove: (d, a) => a.order.capture().then(async (dat) => {
                     const res = await fetchApi('/api/checkout', 'POST', { cart: [activeProduct], paymentId: dat.id });
-                    if (res) { 
-                        showToast("תודה רבה! הזמנה בוצעה. 🎉"); 
-                        document.getElementById('detailsModal').style.display = 'none'; 
-                    }
+                    if (res) { showToast("תודה רבה! הזמנה בוצעה. 🎉"); document.getElementById('detailsModal').style.display = 'none'; }
                 })
             }).render('#paypal-btn');
-        }
-
-        async function buyWithPayPal() {
-            if (!currentUser) {
-                showToast('התחבר כדי לשלם', true);
-                openAuthModal();
-                return;
-            }
-            
-            // הצגת כפתור PayPal האמיתי
-            document.getElementById('paypal-btn').style.display = 'block';
-            renderPaypal();
-            showToast('בחר אמצעי תשלום ב-PayPal');
-        }
-
-        async function buyWithCard() {
-            if (!currentUser) {
-                showToast('התחבר כדי לשלם', true);
-                openAuthModal();
-                return;
-            }
-            
-            // הצגת שדות כרטיס אשראי
-            showCardFields();
-        }
-
-        function showCardFields() {
-            if (!currentUser) {
-                showToast('התחבר כדי לשלם', true);
-                openAuthModal();
-                return;
-            }
-            
-            // הסתר כפתור PayPal הרגיל
-            document.getElementById('paypal-btn').style.display = 'none';
-            
-            // הצג שדות כרטיס אשראי
-            const cardContainer = document.getElementById('card-fields-container');
-            cardContainer.style.display = 'block';
-            
-            // עדכן סכום
-            document.getElementById('card-total').textContent = activeProduct.price;
-        }
-
-        function loadPayPalCardFields() {
-            if (!paypal.HostedFields) {
-                showToast('טוען שדות כרטיס...', true);
-                setTimeout(loadPayPalCardFields, 1000);
-                return;
-            }
-            
-            paypal.HostedFields.render({
-                createOrder: function() {
-                    return fetch('/api/create-order', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': 'Bearer ' + currentUser.token
-                        },
-                        body: JSON.stringify({
-                            amount: activeProduct.price,
-                            product: activeProduct
-                        })
-                    }).then(function(res) {
-                        return res.json();
-                    }).then(function(orderData) {
-                        return orderData.id;
-                    });
-                },
-                styles: {
-                    'input': {
-                        'font-size': '16px',
-                        'font-family': 'Heebo, sans-serif',
-                        'color': '#fff',
-                        'background': '#111',
-                        'border': '1px solid #333',
-                        'border-radius': '5px',
-                        'padding': '10px'
-                    },
-                    ':focus': {
-                        'border': '1px solid var(--primary-red)'
-                    }
-                },
-                fields: {
-                    number: {
-                        selector: '#card-number-field-container',
-                        placeholder: 'מספר כרטיס'
-                    },
-                    cvv: {
-                        selector: '#card-cvv-field-container',
-                        placeholder: 'CVV'
-                    },
-                    expirationDate: {
-                        selector: '#card-expiry-field-container',
-                        placeholder: 'תאריך תפוגה (MM/YY)'
-                    }
-                }
-            }).then(function(hostedFields) {
-                document.getElementById('card-submit-btn').addEventListener('click', function() {
-                    hostedFields.submit({
-                        cardholderName: document.getElementById('card-name-field-container input')?.value || ''
-                    }).then(function(payload) {
-                        // תשלום בוצע בהצלחה
-                        fetch('/api/checkout', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': 'Bearer ' + currentUser.token
-                            },
-                            body: JSON.stringify({
-                                cart: [activeProduct],
-                                paymentId: payload.orderId
-                            })
-                        }).then(function() {
-                            showToast("תודה רבה! הזמנה בוצעה בהצלחה! 🎉");
-                            document.getElementById('detailsModal').style.display = 'none';
-                        });
-                    }).catch(function(err) {
-                        showToast('שגיאה בתשלום: ' + err.message, true);
-                    });
-                });
-            }).catch(function(err) {
-                console.error('Hosted Fields Error:', err);
-                showToast('שגיאה בטעינת שדות כרטיס', true);
-            });
-        }
-
-        async function processCardPayment() {
-            const cardHolder = document.getElementById('cardHolderName').value;
-            const cardNumber = document.getElementById('cardNumber').value;
-            const cardExpiry = document.getElementById('cardExpiry').value;
-            const cardCvv = document.getElementById('cardCvv').value;
-            const cardId = document.getElementById('cardIdNumber').value;
-            
-            // בדיקת שדות
-            if (!cardHolder || !cardNumber || !cardExpiry || !cardCvv || !cardId) {
-                showToast('אנא מלא את כל שדות הכרטיס', true);
-                return;
-            }
-            
-            if (cardNumber.length !== 16) {
-                showToast('מספר כרטיס חייב להיות 16 ספרות', true);
-                return;
-            }
-            
-            if (cardId.length !== 9) {
-                showToast('ת.ז חייבת להיות 9 ספרות', true);
-                return;
-            }
-            
-            showToast('מעבד תשלום...');
-            
-            // שמירת הזמנה במערכת
-            const res = await fetchApi('/api/checkout', 'POST', { 
-                cart: [{...activeProduct, qty: currentQty}], 
-                paymentId: 'CREDIT_' + Date.now() 
-            });
-            
-            if (res) { 
-                showToast("תודה רבה! הזמנה בוצעה בהצלחה! 🎉"); 
-                document.getElementById('detailsModal').style.display = 'none';
-                // ניקוי שדות
-                document.getElementById('cardHolderName').value = '';
-                document.getElementById('cardNumber').value = '';
-                document.getElementById('cardExpiry').value = '';
-                document.getElementById('cardCvv').value = '';
-                document.getElementById('cardIdNumber').value = '';
-                document.getElementById('card-fields-container').style.display = 'none';
-            }
-        }
-
-        async function payWithCreditCard() {
-            if (!currentUser) {
-                showToast('התחבר כדי לשלם', true);
-                openAuthModal();
-                return;
-            }
-            
-            showToast('מעביר לדף תשלום...');
-            
-            // Redirect ישיר לדף PayPal checkout
-            const amount = activeProduct.price;
-            const itemName = encodeURIComponent(activeProduct.name);
-            const business = 'shalevamir1410@gmail.com'; // האימייל שלך ב-PayPal
-            
-            // URL של PayPal Buy Now
-            const paypalUrl = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${business}&amount=${amount}&currency_code=ILS&item_name=${itemName}&return=${encodeURIComponent(window.location.origin + '/success')}&cancel_return=${encodeURIComponent(window.location.origin + '/cancel')}`;
-            
-            window.location.href = paypalUrl;
-        }
-
-        async function payCartWithCreditCard() {
-            if (!currentUser) {
-                showToast('התחבר כדי לשלם', true);
-                openAuthModal();
-                return;
-            }
-            
-            if (!cart.length) {
-                showToast('עגלה ריקה', true);
-                return;
-            }
-            
-            // חישוב סכום כולל
-            let total = 0;
-            cart.forEach(item => total += parseFloat(item.price) || 0);
-            
-            showToast('מעביר לדף תשלום...');
-            
-            // Redirect ישיר לדף PayPal checkout
-            const amount = total.toFixed(2);
-            const itemName = encodeURIComponent('הזמנה מ-VEXO Gaming - ' + cart.length + ' פריטים');
-            const business = 'shalevamir1410@gmail.com';
-            
-            const paypalUrl = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${business}&amount=${amount}&currency_code=ILS&item_name=${itemName}&return=${encodeURIComponent(window.location.origin + '/success')}&cancel_return=${encodeURIComponent(window.location.origin + '/cancel')}`;
-            
-            window.location.href = paypalUrl;
-        }
-
-        async function payCartWithCreditCard() {
-            if (!currentUser) {
-                showToast('התחבר כדי לשלם', true);
-                openAuthModal();
-                return;
-            }
-            
-            if (!cart.length) {
-                showToast('עגלה ריקה', true);
-                return;
-            }
-            
-            // חישוב סכום כולל
-            let total = 0;
-            cart.forEach(item => total += parseFloat(item.price) || 0);
-            
-            showToast('מעביר לדף תשלום...');
-            
-            // Redirect ישיר לדף PayPal checkout
-            const amount = total.toFixed(2);
-            const itemName = encodeURIComponent('הזמנה מ-VEXO Gaming - ' + cart.length + ' פריטים');
-            const business = 'shalevamir1410@gmail.com';
-            
-            const paypalUrl = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${business}&amount=${amount}&currency_code=ILS&item_name=${itemName}&return=${encodeURIComponent(window.location.origin + '/success')}&cancel_return=${encodeURIComponent(window.location.origin + '/cancel')}`;
-            
-            window.location.href = paypalUrl;
         }
 
         async function checkout() {
@@ -1422,125 +823,6 @@
             }).join('');
         }
         function logout() { localStorage.clear(); location.reload(); }
-
-        async function login() {
-            const email = document.getElementById('emailL').value.trim();
-            const password = document.getElementById('passL').value;
-            
-            if (!email || !password) {
-                showToast('אנא הכנס אימייל וסיסמה', true);
-                return;
-            }
-            
-            console.log('Trying to login with:', email);
-            
-            try {
-                const res = await fetchApi('/api/login', 'POST', { email, password });
-                
-                if (res && res.token) {
-                    localStorage.setItem('vexoToken', res.token);
-                    localStorage.setItem('vexoUser', JSON.stringify(res.user));
-                    currentUser = res.user;
-                    token = res.token;
-                    updateUI();
-                    document.getElementById('authModal').style.display = 'none';
-                    showToast('התחברת בהצלחה! 👋');
-                } else {
-                    console.error('Login failed - no token received:', res);
-                    showToast('שגיאה בהתחברות - בדוק אימייל וסיסמה', true);
-                }
-            } catch (e) {
-                console.error('Login error:', e);
-                showToast('שגיאת רשת - בדוק חיבור אינטרנט', true);
-            }
-        }
-
-        async function requestPasswordReset() {
-            const email = document.getElementById('emailL').value.trim();
-            
-            if (!email) {
-                showToast('אנא הכנס את האימייל שלך בשדה האימייל', true);
-                return;
-            }
-            
-            showToast('שולח לינק לאיפוס סיסמה...');
-            
-            const res = await fetchApi('/api/request-password-reset', 'POST', { email });
-            
-            if (res) {
-                showToast('אם האימייל קיים במערכת, נשלח לינק לאיפוס לתיבת המייל שלך');
-                document.getElementById('authModal').style.display = 'none';
-            } else {
-                showToast('שגיאה בשליחת הלינק', true);
-            }
-        }
-
-        async function resetPassword() {
-            const email = document.getElementById('emailL').value.trim();
-            
-            if (!email) {
-                showToast('אנא הכנס את האימייל שלך קודם', true);
-                return;
-            }
-            
-            const newPassword = prompt('הכנס סיסמה חדשה (6+ תווים):');
-            if (!newPassword) return;
-            
-            if (newPassword.length < 6) {
-                showToast('הסיסמה חייבת להיות לפחות 6 תווים', true);
-                return;
-            }
-            
-            const res = await fetchApi('/api/reset-password', 'POST', { email, newPassword });
-            
-            if (res && !res.error) {
-                showToast('סיסמה אופסה בהצלחה! 🔑');
-                document.getElementById('passL').value = newPassword;
-            } else {
-                const errorMsg = res?.error || 'בדוק אימייל';
-                showToast('שגיאה באיפוס סיסמה: ' + errorMsg, true);
-                console.error('Reset password error:', res);
-            }
-        }
-
-        async function register() {
-            const name = document.getElementById('nameR').value;
-            const email = document.getElementById('emailR').value;
-            const password = document.getElementById('passR').value;
-            const address = document.getElementById('addrR').value;
-            const phone = document.getElementById('phoneR').value;
-            
-            if (!name || !email || !password) {
-                showToast('אנא מלא את כל השדות', true);
-                return;
-            }
-            
-            if (password.length < 6) {
-                showToast('הסיסמה חייבת להיות לפחות 6 תווים', true);
-                return;
-            }
-            
-            if (!phone) {
-                showToast('אנא הכנס מספר טלפון', true);
-                return;
-            }
-            
-            const res = await fetchApi('/api/register', 'POST', { name, email, password, address, phone });
-            if (res && res.token) {
-                localStorage.setItem('vexoToken', res.token);
-                localStorage.setItem('vexoUser', JSON.stringify(res.user));
-                currentUser = res.user;
-                token = res.token;
-                updateUI();
-                document.getElementById('authModal').style.display = 'none';
-                showToast('נרשמת בהצלחה! 🎉');
-            } else {
-                const errorMsg = res?.error || 'שגיאה בהרשמה';
-                showToast('שגיאה: ' + errorMsg, true);
-                console.error('Registration error:', res);
-            }
-        }
-
         window.addEventListener('load', () => { setTimeout(() => document.getElementById('vexoSearchInput').value = '', 150); });
         init();
     </script>
