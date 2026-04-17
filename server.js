@@ -2456,6 +2456,13 @@ db.run(`CREATE TABLE IF NOT EXISTS chat_messages (
     created_at TEXT
 )`);
 
+// Add email column if it doesn't exist (for existing tables)
+db.run(`ALTER TABLE chat_messages ADD COLUMN email TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+        console.log('Note: email column may already exist or table structure is different');
+    }
+});
+
 // Send email reply endpoint
 app.post('/api/send-email-reply', async (req, res) => {
     try {
