@@ -1,4 +1,4 @@
-const { Resend } = require('resend');
+﻿const { Resend } = require('resend');
 
 // Initialize Resend with API key
 const resend = new Resend(process.env.RESEND_API_KEY || 're_Q1L7cooz_49L4uvJLFj5BTCx3atmMeW1u');
@@ -105,7 +105,7 @@ const EMAIL_TEMPLATES = {
     }),
 
     // Password reset email
-    passwordReset: (resetLink) => ({
+    passwordReset: ({resetLink}) => ({
         subject: `🔑 איפוס סיסמה - ${resetLink}`,
         html: `
             <!DOCTYPE html>
@@ -226,3 +226,4 @@ module.exports = {
     sendShippingUpdate,
     sendPasswordReset
 };
+
