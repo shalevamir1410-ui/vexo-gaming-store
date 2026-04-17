@@ -1566,11 +1566,11 @@
     </div>
 </div>
 <script>
-function toggleChat() {
+window.toggleChat = function() {
     const box = document.getElementById('chatBox');
     box.style.display = box.style.display === 'none' ? 'block' : 'none';
 }
-async function sendChatMsg() {
+window.sendChatMsg = async function() {
     const name = document.getElementById('chatName').value.trim();
     const message = document.getElementById('chatMsg').value.trim();
     const status = document.getElementById('chatStatus');
@@ -1592,11 +1592,11 @@ async function sendChatMsg() {
             status.style.display='block'; status.style.color='#27ae60'; status.textContent='ההודעה נשלחה!';
             document.getElementById('chatMsg').value = '';
             setTimeout(() => { status.style.display='none'; }, 3000);
-            updateChatBadge();
+            window.updateChatBadge();
         }
     } catch(e) { status.style.display='block'; status.style.color='#ff6b6b'; status.textContent='שגיאה, נסה שנית'; }
 }
-async function updateChatBadge() {
+window.updateChatBadge = async function() {
     try {
         const res = await fetch('/api/chat/unread-count');
         if (res.ok) {
@@ -1612,9 +1612,9 @@ async function updateChatBadge() {
     } catch(e) { console.error('Error updating chat badge:', e); }
 }
 // Update badge every 30 seconds
-setInterval(updateChatBadge, 30000);
+setInterval(window.updateChatBadge, 30000);
 // Initial update
-updateChatBadge();
+window.updateChatBadge();
 </script>
 
 </body>
