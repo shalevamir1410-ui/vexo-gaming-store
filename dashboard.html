@@ -1852,7 +1852,7 @@
                             <span style="font-size:12px;color:#555;">${new Date(m.created_at).toLocaleString('he-IL')}</span>
                         </div>
                         <p style="margin:0;color:#ddd;font-size:14px;margin-bottom:10px;">${m.message}</p>
-                        ${m.email ? `<button onclick="replyToMessage('${m.email}', '${m.name || 'לקוח'}')" style="background:#ff0000;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Outfit';">📧 הגב למייל</button>` : ''}
+                        <button onclick="replyToMessage('${m.email || ''}', '${m.name || 'לקוח'}')" style="background:${m.email ? '#ff0000' : '#666'};color:white;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Outfit';">📧 ${m.email ? 'הגב למייל' : 'הגב (ללא אימייל)'}</button>
                     </div>
                 `).join('');
             } catch(e) { console.error(e); }
@@ -1876,6 +1876,12 @@
         }
 
         async function replyToMessage(email, name) {
+            // If no email, ask for it
+            if (!email) {
+                email = prompt(`ל-${name} אין אימייל משויך.\n\nהזן את כתובת המייל לתגובה:`);
+                if (!email) return;
+            }
+            
             const reply = prompt(`הגב ל-${name} (${email}):\n\nכתוב את התגובה שלך:`);
             if (!reply) return;
             
