@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 
 <head>
@@ -1544,6 +1544,48 @@
         window.addEventListener('load', () => { setTimeout(() => document.getElementById('vexoSearchInput').value = '', 150); });
         init();
     </script>
+<!-- CHAT WIDGET -->
+<div id="chatWidget" style="position:fixed;bottom:25px;left:25px;z-index:9999;font-family:'Outfit',sans-serif;">
+    <!-- כפתור פתיחה -->
+    <button id="chatToggleBtn" onclick="toggleChat()" style="width:58px;height:58px;border-radius:50%;background:#ff0000;border:none;color:white;font-size:24px;cursor:pointer;box-shadow:0 0 15px rgba(255,0,0,0.5);transition:0.2s;">
+        <i class="fas fa-comment-dots"></i>
+    </button>
+    <!-- חלון צ'אט -->
+    <div id="chatBox" style="display:none;position:absolute;bottom:70px;left:0;width:300px;background:#151515;border:1px solid #ff0000;border-radius:16px;overflow:hidden;box-shadow:0 0 25px rgba(255,0,0,0.2);">
+        <div style="background:#ff0000;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:700;font-size:15px;">💬 צ'אט עם VEXO</span>
+            <span onclick="toggleChat()" style="cursor:pointer;font-size:20px;">&times;</span>
+        </div>
+        <div style="padding:15px;">
+            <input id="chatName" type="text" placeholder="השם שלך (אופציונלי)" style="width:100%;background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:10px;color:white;font-size:13px;margin-bottom:10px;box-sizing:border-box;font-family:'Outfit';">
+            <textarea id="chatMsg" placeholder="כתוב הודעה..." rows="3" style="width:100%;background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:10px;color:white;font-size:13px;resize:none;box-sizing:border-box;font-family:'Outfit';"></textarea>
+            <button onclick="sendChatMsg()" style="width:100%;background:#ff0000;color:white;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;font-family:'Outfit';">שלח הודעה</button>
+            <div id="chatStatus" style="text-align:center;font-size:12px;margin-top:8px;display:none;"></div>
+        </div>
+    </div>
+</div>
+<script>
+function toggleChat() {
+    const box = document.getElementById('chatBox');
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+async function sendChatMsg() {
+    const name = document.getElementById('chatName').value.trim();
+    const message = document.getElementById('chatMsg').value.trim();
+    const status = document.getElementById('chatStatus');
+    if (!message) { status.style.display='block'; status.style.color='#ff6b6b'; status.textContent='כתוב הודעה קודם'; return; }
+    try {
+        const res = await fetch('/api/chat/message', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, message }) });
+        if (res.ok) {
+            status.style.display='block'; status.style.color='#27ae60'; status.textContent='ההודעה נשלחה!';
+            document.getElementById('chatMsg').value = '';
+            setTimeout(() => { status.style.display='none'; }, 3000);
+        }
+    } catch(e) { status.style.display='block'; status.style.color='#ff6b6b'; status.textContent='שגיאה, נסה שנית'; }
+}
+</script>
+
 </body>
 
 </html>
+
