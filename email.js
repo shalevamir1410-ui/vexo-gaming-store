@@ -104,6 +104,47 @@ const EMAIL_TEMPLATES = {
         `
     }),
 
+    // Chat reply email
+    chatReply: ({name, reply}) => ({
+        subject: `📧 תגובה מ-VEXO Gaming Store`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body { font-family: Arial, sans-serif; direction: rtl; text-align: right; background-color: #f5f5f5; padding: 20px; }
+                    .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                    .header { text-align: center; margin-bottom: 30px; }
+                    .logo { font-size: 24px; font-weight: bold; color: #ff0000; }
+                    .reply-box { background-color: #f9f9f9; padding: 20px; border-radius: 8px; border-right: 4px solid #ff0000; margin: 20px 0; }
+                    .footer { text-align: center; margin-top: 30px; color: #888; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <div class="logo">🎮 VEXO Gaming Store</div>
+                    </div>
+                    <h2>היי ${name}!</h2>
+                    <p>קיבלנו את ההודעה שלך בצ'אט ורצינו להגיב:</p>
+                    
+                    <div class="reply-box">
+                        <p style="margin: 0; font-size: 16px; line-height: 1.6;">${reply}</p>
+                    </div>
+                    
+                    <p>אם יש לך שאלות נוספות, אל תהסס לכתוב לנו שוב!</p>
+                    
+                    <div class="footer">
+                        <p>VEXO Gaming Store</p>
+                        <p>אתר: <a href="https://vexo-gaming-store.onrender.com" style="color: #ff0000;">vexo-gaming-store.onrender.com</a></p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    }),
+
     // Password reset email
     passwordReset: ({resetLink}) => ({
         subject: `🔑 איפוס סיסמה - ${resetLink}`,

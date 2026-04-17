@@ -2389,7 +2389,7 @@ app.get('/reset-password', (req, res) => {
 // Chat endpoints
 app.post('/api/chat/message', async (req, res) => {
     try {
-        const { name, message } = req.body;
+        const { name, message, email } = req.body;
         
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
@@ -2398,8 +2398,8 @@ app.post('/api/chat/message', async (req, res) => {
         // Insert chat message into database
         await new Promise((resolve, reject) => {
             db.run(
-                'INSERT INTO chat_messages (name, message, created_at) VALUES (?, ?, ?)',
-                [name || 'אנונימי', message, new Date().toISOString()],
+                'INSERT INTO chat_messages (name, email, message, created_at) VALUES (?, ?, ?, ?)',
+                [name || 'אנונימי', email || null, message, new Date().toISOString()],
                 (err) => {
                     if (err) reject(err);
                     else resolve();
@@ -2451,9 +2451,33 @@ app.get('/api/chat/messages', async (req, res) => {
 db.run(`CREATE TABLE IF NOT EXISTS chat_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
+    email TEXT,
     message TEXT,
     created_at TEXT
 )`);
+
+// Send email reply endpoint
+app.post('/api/send-email-reply', async (req, res) => {
+    try {
+        const { to, name, message } = req.body;
+        
+        if (!to || !message) {
+            return res.status(400).json({ error: 'Email and message are required' });
+        }
+        
+        const { sendEmail } = require('./email');
+        
+        await sendEmail(to, 'chatReply', {
+            name,
+            reply: message
+        });
+        
+        res.json({ success: true, message: 'Reply sent' });
+    } catch (error) {
+        console.error('Email reply error:', error);
+        res.status(500).json({ error: 'Failed to send reply' });
+    }
+});
 
 // Serve static files
 app.use(express.static(__dirname));

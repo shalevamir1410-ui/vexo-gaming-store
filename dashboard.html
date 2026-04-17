@@ -1845,10 +1845,14 @@
                 list.innerHTML = messages.map(m => `
                     <div style="background:#111;border:1px solid #222;border-radius:10px;padding:15px;margin-bottom:12px;">
                         <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                            <span style="font-weight:700;color:white;">${m.name || 'אנונימי'}</span>
+                            <div>
+                                <span style="font-weight:700;color:white;">${m.name || 'אנונימי'}</span>
+                                ${m.email ? `<span style="font-size:12px;color:#ff0000;margin-right:8px;">${m.email}</span>` : ''}
+                            </div>
                             <span style="font-size:12px;color:#555;">${new Date(m.created_at).toLocaleString('he-IL')}</span>
                         </div>
-                        <p style="margin:0;color:#ddd;font-size:14px;">${m.message}</p>
+                        <p style="margin:0;color:#ddd;font-size:14px;margin-bottom:10px;">${m.message}</p>
+                        ${m.email ? `<button onclick="replyToMessage('${m.email}', '${m.name || 'לקוח'}')" style="background:#ff0000;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Outfit';">📧 הגב למייל</button>` : ''}
                     </div>
                 `).join('');
             } catch(e) { console.error(e); }
@@ -1869,6 +1873,28 @@
             // לא מיושם בגרסה הנוכחית
             loadMessages();
             loadUnreadCount();
+        }
+
+        async function replyToMessage(email, name) {
+            const reply = prompt(`הגב ל-${name} (${email}):\n\nכתוב את התגובה שלך:`);
+            if (!reply) return;
+            
+            try {
+                const res = await fetch('/api/send-email-reply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to: email, name, message: reply })
+                });
+                
+                if (res.ok) {
+                    showToast('התגובה נשלחה בהצלחה!');
+                } else {
+                    showToast('שגיאה בשליחת התגובה', true);
+                }
+            } catch(e) {
+                showToast('שגיאה בשליחת התגובה', true);
+                console.error(e);
+            }
         }
 
         // Load unread count on init
