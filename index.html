@@ -1552,12 +1552,15 @@
         <span id="chatBadge" style="position:absolute;top:-5px;right:-5px;background:#fff;color:#ff0000;font-size:11px;font-weight:bold;width:20px;height:20px;border-radius:50%;display:none;align-items:center;justify-content:center;">0</span>
     </button>
     <!-- חלון צ'אט -->
-    <div id="chatBox" style="display:none;position:absolute;bottom:70px;left:0;width:300px;background:#151515;border:1px solid #ff0000;border-radius:16px;overflow:hidden;box-shadow:0 0 25px rgba(255,0,0,0.2);">
+    <div id="chatBox" style="display:none;position:absolute;bottom:70px;left:0;width:350px;background:#151515;border:1px solid #ff0000;border-radius:16px;overflow:hidden;box-shadow:0 0 25px rgba(255,0,0,0.2);max-height:500px;display:flex;flex-direction:column;">
         <div style="background:#ff0000;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
             <span style="font-weight:700;font-size:15px;">💬 צ'אט עם VEXO</span>
             <span onclick="toggleChat()" style="cursor:pointer;font-size:20px;">&times;</span>
         </div>
-        <div style="padding:15px;">
+        <div id="chatHistory" style="flex:1;overflow-y:auto;padding:15px;background:#111;max-height:300px;">
+            <p style="color:#555;text-align:center;font-size:12px;">טוען היסטוריה...</p>
+        </div>
+        <div style="padding:15px;border-top:1px solid #222;">
             <input id="chatName" type="text" placeholder="השם שלך (אופציונלי)" style="width:100%;background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:10px;color:white;font-size:13px;margin-bottom:10px;box-sizing:border-box;font-family:'Outfit';">
             <textarea id="chatMsg" placeholder="כתוב הודעה..." rows="3" style="width:100%;background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:10px;color:white;font-size:13px;resize:none;box-sizing:border-box;font-family:'Outfit';"></textarea>
             <button onclick="sendChatMsg()" style="width:100%;background:#ff0000;color:white;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;font-family:'Outfit';">שלח הודעה</button>
@@ -1568,7 +1571,59 @@
 <script>
 window.toggleChat = function() {
     const box = document.getElementById('chatBox');
-    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    const isOpening = box.style.display === 'none';
+    box.style.display = isOpening ? 'block' : 'none';
+    if (isOpening) {
+        window.loadChatHistory();
+    }
+}
+window.loadChatHistory = async function() {
+    const historyDiv = document.getElementById('chatHistory');
+    
+    // Get logged-in user email if available
+    let email = null;
+    const token = localStorage.getItem('token');
+    if (token) {
+        try {
+            const user = JSON.parse(atob(token.split('.')[1]));
+            email = user.email;
+        } catch(e) { console.error('Error parsing token:', e); }
+    }
+    
+    try {
+        const url = email ? `/api/chat/history?email=${encodeURIComponent(email)}` : '/api/chat/history';
+        const res = await fetch(url);
+        const messages = await res.json();
+        
+        if (!messages.length) {
+            historyDiv.innerHTML = '<p style="color:#555;text-align:center;font-size:12px;">אין הודעות עדיין</p>';
+            return;
+        }
+        
+        // Reverse to show oldest first
+        const reversedMessages = messages.reverse();
+        
+        historyDiv.innerHTML = reversedMessages.map(m => `
+            <div style="margin-bottom:15px;">
+                <div style="background:#1e1e1e;border-radius:8px;padding:10px;margin-bottom:5px;">
+                    <div style="font-size:11px;color:#888;margin-bottom:3px;">${m.name || 'אנונימי'} - ${new Date(m.created_at).toLocaleString('he-IL')}</div>
+                    <p style="margin:0;color:#ddd;font-size:13px;">${m.message}</p>
+                </div>
+                ${m.replies && m.replies.length > 0 ? m.replies.map(r => `
+                    <div style="background:#1a0a0a;border:1px solid #ff0000;border-radius:8px;padding:10px;margin-right:20px;">
+                        <div style="font-size:11px;color:#ff0000;margin-bottom:3px;">VEXO - תגובה</div>
+                        <p style="margin:0;color:#ccc;font-size:13px;">${r}</p>
+                    </div>
+                `).join('') : ''}
+            </div>
+        `).join('');
+        
+        // Scroll to bottom
+        historyDiv.scrollTop = historyDiv.scrollHeight;
+    } catch(e) {
+        console.error('Error loading chat history:', e);
+        historyDiv.innerHTML = '<p style="color:#ff6b6b;text-align:center;font-size:12px;">שגיאה בטעינת ההיסטוריה</p>';
+    }
 }
 window.sendChatMsg = async function() {
     const name = document.getElementById('chatName').value.trim();
@@ -1593,6 +1648,7 @@ window.sendChatMsg = async function() {
             document.getElementById('chatMsg').value = '';
             setTimeout(() => { status.style.display='none'; }, 3000);
             window.updateChatBadge();
+            window.loadChatHistory(); // Reload history to show new message
         }
     } catch(e) { status.style.display='block'; status.style.color='#ff6b6b'; status.textContent='שגיאה, נסה שנית'; }
 }

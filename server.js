@@ -2447,6 +2447,60 @@ app.get('/api/chat/messages', async (req, res) => {
     }
 });
 
+// Get chat history with replies for a specific user (by email)
+app.get('/api/chat/history', async (req, res) => {
+    try {
+        const { email } = req.query;
+        
+        let messages;
+        if (email) {
+            // Get messages for specific user with their replies
+            messages = await new Promise((resolve, reject) => {
+                db.all(`
+                    SELECT m.*, 
+                           (SELECT GROUP_CONCAT(reply, '|||') 
+                            FROM chat_replies r 
+                            WHERE r.message_id = m.id) as replies
+                    FROM chat_messages m
+                    WHERE m.email = ?
+                    ORDER BY m.created_at DESC
+                    LIMIT 50
+                `, [email], (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                });
+            });
+        } else {
+            // Get all messages with replies
+            messages = await new Promise((resolve, reject) => {
+                db.all(`
+                    SELECT m.*, 
+                           (SELECT GROUP_CONCAT(reply, '|||') 
+                            FROM chat_replies r 
+                            WHERE r.message_id = m.id) as replies
+                    FROM chat_messages m
+                    ORDER BY m.created_at DESC
+                    LIMIT 50
+                `, (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                });
+            });
+        }
+        
+        // Parse replies from string to array
+        messages = messages.map(m => ({
+            ...m,
+            replies: m.replies ? m.replies.split('|||') : []
+        }));
+        
+        res.json(messages);
+    } catch (error) {
+        console.error('Chat history error:', error);
+        res.status(500).json({ error: 'Failed to get chat history' });
+    }
+});
+
 // Create chat messages table if not exists
 db.run(`CREATE TABLE IF NOT EXISTS chat_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2463,26 +2517,40 @@ db.run(`ALTER TABLE chat_messages ADD COLUMN email TEXT`, (err) => {
     }
 });
 
-// Send email reply endpoint
-app.post('/api/send-email-reply', async (req, res) => {
+// Create chat_replies table for admin responses
+db.run(`CREATE TABLE IF NOT EXISTS chat_replies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    message_id INTEGER,
+    reply TEXT,
+    created_at TEXT,
+    FOREIGN KEY (message_id) REFERENCES chat_messages(id)
+)`);
+
+// Send chat reply endpoint (saves to database)
+app.post('/api/send-chat-reply', async (req, res) => {
     try {
-        const { to, name, message } = req.body;
+        const { message_id, reply } = req.body;
         
-        if (!to || !message) {
-            return res.status(400).json({ error: 'Email and message are required' });
+        if (!message_id || !reply) {
+            return res.status(400).json({ error: 'Message ID and reply are required' });
         }
         
-        const { sendEmail } = require('./email');
-        
-        await sendEmail(to, 'chatReply', {
-            name,
-            reply: message
+        // Insert reply into database
+        await new Promise((resolve, reject) => {
+            db.run(
+                'INSERT INTO chat_replies (message_id, reply, created_at) VALUES (?, ?, ?)',
+                [message_id, reply, new Date().toISOString()],
+                (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                }
+            );
         });
         
-        res.json({ success: true, message: 'Reply sent' });
+        res.json({ success: true, message: 'Reply saved' });
     } catch (error) {
-        console.error('Email reply error:', error);
-        res.status(500).json({ error: 'Failed to send reply' });
+        console.error('Chat reply error:', error);
+        res.status(500).json({ error: 'Failed to save reply' });
     }
 });
 

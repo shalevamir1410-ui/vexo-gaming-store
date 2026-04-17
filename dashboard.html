@@ -1838,7 +1838,7 @@
         // --- MESSAGES ---
         async function loadMessages() {
             try {
-                const res = await fetch('/api/chat/messages');
+                const res = await fetch('/api/chat/history');
                 const messages = await res.json();
                 const list = document.getElementById('messagesList');
                 if (!messages.length) { list.innerHTML = '<p style="color:#555;text-align:center;margin-top:30px;">אין הודעות עדיין</p>'; return; }
@@ -1852,7 +1852,13 @@
                             <span style="font-size:12px;color:#555;">${new Date(m.created_at).toLocaleString('he-IL')}</span>
                         </div>
                         <p style="margin:0;color:#ddd;font-size:14px;margin-bottom:10px;">${m.message}</p>
-                        <button onclick="replyToMessage('${m.email || ''}', '${m.name || 'לקוח'}')" style="background:${m.email ? '#ff0000' : '#666'};color:white;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Outfit';">📧 ${m.email ? 'הגב למייל' : 'הגב (ללא אימייל)'}</button>
+                        ${m.replies && m.replies.length > 0 ? `
+                            <div style="background:#1a0a0a;border:1px solid #ff0000;border-radius:8px;padding:10px;margin-bottom:10px;">
+                                <div style="font-size:11px;color:#ff0000;margin-bottom:5px;">תגובות אדמין:</div>
+                                ${m.replies.map(r => `<p style="margin:0 0 5px 0;color:#ccc;font-size:13px;">${r}</p>`).join('')}
+                            </div>
+                        ` : ''}
+                        <button onclick="replyToMessage('${m.id}', '${m.email || ''}', '${m.name || 'לקוח'}')" style="background:#ff0000;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Outfit';">� הגב בצ'אט</button>
                     </div>
                 `).join('');
             } catch(e) { console.error(e); }
@@ -1875,30 +1881,25 @@
             loadUnreadCount();
         }
 
-        async function replyToMessage(email, name) {
-            // If no email, ask for it
-            if (!email) {
-                email = prompt(`ל-${name} אין אימייל משויך.\n\nהזן את כתובת המייל לתגובה:`);
-                if (!email) return;
-            }
-            
-            const reply = prompt(`הגב ל-${name} (${email}):\n\nכתוב את התגובה שלך:`);
+        async function replyToMessage(messageId, email, name) {
+            const reply = prompt(`הגב ל-${name}:\n\nכתוב את התגובה שלך:`);
             if (!reply) return;
             
             try {
-                const res = await fetch('/api/send-email-reply', {
+                const res = await fetch('/api/send-chat-reply', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ to: email, name, message: reply })
+                    body: JSON.stringify({ message_id: messageId, reply })
                 });
                 
                 if (res.ok) {
-                    showToast('התגובה נשלחה בהצלחה!');
+                    showToast('התגובה נשמרה בהצלחה!');
+                    loadMessages(); // Reload to show the reply
                 } else {
-                    showToast('שגיאה בשליחת התגובה', true);
+                    showToast('שגיאה בשמירת התגובה', true);
                 }
             } catch(e) {
-                showToast('שגיאה בשליחת התגובה', true);
+                showToast('שגיאה בשמירת התגובה', true);
                 console.error(e);
             }
         }
