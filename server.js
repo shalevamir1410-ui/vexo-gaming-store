@@ -2386,6 +2386,75 @@ app.get('/reset-password', (req, res) => {
     res.sendFile(path.join(__dirname, 'reset-password.html'));
 });
 
+// Chat endpoints
+app.post('/api/chat/message', async (req, res) => {
+    try {
+        const { name, message } = req.body;
+        
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+        
+        // Insert chat message into database
+        await new Promise((resolve, reject) => {
+            db.run(
+                'INSERT INTO chat_messages (name, message, created_at) VALUES (?, ?, ?)',
+                [name || 'אנונימי', message, new Date().toISOString()],
+                (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                }
+            );
+        });
+        
+        res.json({ success: true, message: 'Message sent' });
+    } catch (error) {
+        console.error('Chat message error:', error);
+        res.status(500).json({ error: 'Failed to send message' });
+    }
+});
+
+app.get('/api/chat/unread-count', async (req, res) => {
+    try {
+        // Get count of unread messages (all messages for now)
+        const count = await new Promise((resolve, reject) => {
+            db.get('SELECT COUNT(*) as count FROM chat_messages', (err, row) => {
+                if (err) reject(err);
+                else resolve(row.count);
+            });
+        });
+        
+        res.json({ count });
+    } catch (error) {
+        console.error('Chat unread count error:', error);
+        res.status(500).json({ error: 'Failed to get unread count' });
+    }
+});
+
+app.get('/api/chat/messages', async (req, res) => {
+    try {
+        const messages = await new Promise((resolve, reject) => {
+            db.all('SELECT * FROM chat_messages ORDER BY created_at DESC LIMIT 50', (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
+        
+        res.json(messages);
+    } catch (error) {
+        console.error('Chat messages error:', error);
+        res.status(500).json({ error: 'Failed to get messages' });
+    }
+});
+
+// Create chat messages table if not exists
+db.run(`CREATE TABLE IF NOT EXISTS chat_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    message TEXT,
+    created_at TEXT
+)`);
+
 // Serve static files
 app.use(express.static(__dirname));
 

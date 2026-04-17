@@ -1547,8 +1547,9 @@
 <!-- CHAT WIDGET -->
 <div id="chatWidget" style="position:fixed;bottom:25px;left:25px;z-index:9999;font-family:'Outfit',sans-serif;">
     <!-- כפתור פתיחה -->
-    <button id="chatToggleBtn" onclick="toggleChat()" style="width:58px;height:58px;border-radius:50%;background:#ff0000;border:none;color:white;font-size:24px;cursor:pointer;box-shadow:0 0 15px rgba(255,0,0,0.5);transition:0.2s;">
+    <button id="chatToggleBtn" onclick="toggleChat()" style="width:58px;height:58px;border-radius:50%;background:#ff0000;border:none;color:white;font-size:24px;cursor:pointer;box-shadow:0 0 15px rgba(255,0,0,0.5);transition:0.2s;position:relative;">
         <i class="fas fa-comment-dots"></i>
+        <span id="chatBadge" style="position:absolute;top:-5px;right:-5px;background:#fff;color:#ff0000;font-size:11px;font-weight:bold;width:20px;height:20px;border-radius:50%;display:none;align-items:center;justify-content:center;">0</span>
     </button>
     <!-- חלון צ'אט -->
     <div id="chatBox" style="display:none;position:absolute;bottom:70px;left:0;width:300px;background:#151515;border:1px solid #ff0000;border-radius:16px;overflow:hidden;box-shadow:0 0 25px rgba(255,0,0,0.2);">
@@ -1580,9 +1581,29 @@ async function sendChatMsg() {
             status.style.display='block'; status.style.color='#27ae60'; status.textContent='ההודעה נשלחה!';
             document.getElementById('chatMsg').value = '';
             setTimeout(() => { status.style.display='none'; }, 3000);
+            updateChatBadge();
         }
     } catch(e) { status.style.display='block'; status.style.color='#ff6b6b'; status.textContent='שגיאה, נסה שנית'; }
 }
+async function updateChatBadge() {
+    try {
+        const res = await fetch('/api/chat/unread-count');
+        if (res.ok) {
+            const data = await res.json();
+            const badge = document.getElementById('chatBadge');
+            if (data.count > 0) {
+                badge.style.display = 'flex';
+                badge.textContent = data.count > 99 ? '99+' : data.count;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch(e) { console.error('Error updating chat badge:', e); }
+}
+// Update badge every 30 seconds
+setInterval(updateChatBadge, 30000);
+// Initial update
+updateChatBadge();
 </script>
 
 </body>
