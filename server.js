@@ -30,7 +30,7 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com", "https://www.paypal.com"],
             scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:", "https://images.unsplash.com"],
             connectSrc: ["'self'", "https://api.resend.com"],
@@ -63,7 +63,7 @@ const limiter = rateLimit({
 // Strict rate limiting for authentication endpoints
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // Limit each IP to 5 login attempts per windowMs
+    max: 20, // Limit each IP to 20 login attempts per windowMs (increased for testing)
     message: { error: 'Too many login attempts, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
@@ -1710,26 +1710,35 @@ app.put('/api/admin/users/:userId/password', authenticateAdmin, [
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
         .withMessage('Password must contain at least one uppercase, one lowercase, one number, and one special character')
 ], async (req, res) => {
+    console.log('Password update request for userId:', req.params.userId);
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        console.log('Password validation error:', errors.array()[0].msg);
         return res.status(400).json({ error: errors.array()[0].msg });
     }
 
     const { password } = req.body;
     const userId = req.params.userId;
 
+    console.log('Updating password for user ID:', userId);
+
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
+        console.log('Password hashed successfully');
 
         db.run('UPDATE users SET password = ?, plain_password = ? WHERE id = ?',
             [hashedPassword, password, userId],
             function(err) {
                 if (err) {
+                    console.error('Database error updating password:', err);
                     return res.status(500).json({ error: 'Failed to update password' });
                 }
+                console.log('Database update result - changes:', this.changes);
                 if (this.changes === 0) {
                     return res.status(404).json({ error: 'User not found' });
                 }
+                console.log('Password updated successfully for user ID:', userId);
                 res.json({ message: 'Password updated successfully' });
             }
         );
