@@ -29,11 +29,12 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
             scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com"],
+            scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:", "https://images.unsplash.com"],
             connectSrc: ["'self'", "https://api.resend.com"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
             objectSrc: ["'none'"],
             mediaSrc: ["'self'"],
             frameSrc: ["'self'", "https://www.paypal.com"]
