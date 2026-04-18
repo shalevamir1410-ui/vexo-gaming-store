@@ -1215,30 +1215,36 @@ app.post('/api/login', authLimiter, [
     body('email').trim().isEmail().withMessage('Invalid email'),
     body('password').isLength({ min: 1 }).withMessage('Password is required')
 ], (req, res) => {
+    console.log('Login request received');
+    console.log('Request body:', req.body);
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        console.log('Validation errors:', errors.array());
         return res.status(400).json({ error: errors.array()[0].msg });
     }
 
     const { email, password } = req.body;
 
     console.log('Login attempt for:', email);
+    console.log('Password length:', password ? password.length : 0);
 
     db.get('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', [email], async (err, user) => {
         if (err) {
             console.error('Database error during login:', err);
             return res.status(500).json({ error: 'Server error' });
         }
-        
+
         if (!user) {
             console.log('User not found:', email);
             return res.status(400).json({ error: 'Invalid credentials' });
         }
-        
+
         console.log('User found, checking password...');
         console.log('Stored password hash:', user.password ? user.password.substring(0, 20) + '...' : 'null');
         console.log('Plain password exists:', !!user.plain_password);
-        
+        console.log('User email in DB:', user.email);
+
         const isValidPassword = await bcrypt.compare(password, user.password);
         console.log('Password valid:', isValidPassword);
         
