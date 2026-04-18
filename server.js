@@ -1704,6 +1704,41 @@ app.post('/api/admin/update-all-tracking', authenticateAdmin, async (req, res) =
     }
 });
 
+// Update user password (admin only)
+app.put('/api/admin/users/:userId/password', authenticateAdmin, [
+    body('password').isLength({ min: 8, max: 100 }).withMessage('Password must be 8-100 characters')
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+        .withMessage('Password must contain at least one uppercase, one lowercase, one number, and one special character')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+    }
+
+    const { password } = req.body;
+    const userId = req.params.userId;
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        db.run('UPDATE users SET password = ?, plain_password = ? WHERE id = ?',
+            [hashedPassword, password, userId],
+            function(err) {
+                if (err) {
+                    return res.status(500).json({ error: 'Failed to update password' });
+                }
+                if (this.changes === 0) {
+                    return res.status(404).json({ error: 'User not found' });
+                }
+                res.json({ message: 'Password updated successfully' });
+            }
+        );
+    } catch (error) {
+        console.error('Password update error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // CJ API integration
 app.post('/api/import-cj-product', authenticateAdmin, async (req, res) => {
     const { sku } = req.body;

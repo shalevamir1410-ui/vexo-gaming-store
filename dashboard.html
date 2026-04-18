@@ -1204,6 +1204,29 @@
             } catch(e) { console.error('Error loading receipts:', e); }
         }
 
+        async function editUserPassword(userId) {
+            const newPassword = prompt('הכנס סיסמה חדשה עבור המשתמש:');
+            if (!newPassword) return;
+
+            // Validate password strength
+            if (newPassword.length < 8) {
+                showToast('הסיסמה חייבת להכיל לפחות 8 תווים', true);
+                return;
+            }
+            if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword) || !/[@$!%*?&]/.test(newPassword)) {
+                showToast('הסיסמה חייבת להכיל אות גדולה, אות קטנה, מספר ותו מיוחד', true);
+                return;
+            }
+
+            const result = await fetchApi(`/api/admin/users/${userId}/password`, 'PUT', { password: newPassword });
+            if (result) {
+                showToast('סיסמה עודכנה בהצלחה');
+                await loadUsers();
+            } else {
+                showToast('שגיאה בעדכון הסיסמה', true);
+            }
+        }
+
         async function addTrackingNumber(orderId) {
             const trackingNumber = prompt('הכנס מספר מעקב:');
             if (!trackingNumber) return;
