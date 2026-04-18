@@ -2482,11 +2482,22 @@ app.get('/api/chat/history', async (req, res) => {
             });
         }
         
-        // Add empty replies array to each message
-        messages = messages.map(m => ({
-            ...m,
-            replies: []
-        }));
+        // Get replies for each message
+        for (const message of messages) {
+            const replies = await new Promise((resolve, reject) => {
+                db.all(`
+                    SELECT reply, created_at
+                    FROM chat_replies
+                    WHERE message_id = ?
+                    ORDER BY created_at ASC
+                `, [message.id], (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                });
+            });
+            
+            message.replies = replies.map(r => r.reply);
+        }
         
         res.json(messages);
     } catch (error) {
