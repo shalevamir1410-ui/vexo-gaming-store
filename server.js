@@ -1372,9 +1372,11 @@ app.post('/api/orders', authenticateToken, (req, res) => {
                 return res.status(500).json({ error: 'Failed to create order' });
             }
             
+            const orderId = this.lastID;
+            
             // Send order confirmation email
             const order = {
-                id: this.lastID,
+                id: orderId,
                 created_at: new Date().toISOString(),
                 shipping_address: shippingAddress,
                 items_json: items_json,
@@ -1382,7 +1384,36 @@ app.post('/api/orders', authenticateToken, (req, res) => {
             };
             await sendOrderConfirmation(order, req.user.email, req.user.name);
             
-            res.json({ id: this.lastID, message: 'Order created successfully', supplierNotes });
+            // Send receipt email
+            try {
+                const { subject, html } = emailTemplates.orderReceipt({
+                    orderNumber: orderId,
+                    customerName: req.user.name,
+                    items: items,
+                    total: revenue
+                });
+                
+                await resend.emails.send({
+                    from: 'VEXO Gaming Store <onboarding@resend.dev>',
+                    to: req.user.email,
+                    subject: subject,
+                    html: html
+                });
+                
+                console.log(`Receipt email sent to ${req.user.email} for order ${orderId}`);
+                
+                // Record receipt in database
+                db.run('INSERT INTO receipts (order_id, customer_email, sent_at) VALUES (?, ?, ?)',
+                    [orderId, req.user.email, new Date().toISOString()],
+                    (err) => {
+                        if (err) console.error('Failed to record receipt:', err);
+                    }
+                );
+            } catch (emailError) {
+                console.error('Failed to send receipt email:', emailError);
+            }
+            
+            res.json({ id: orderId, message: 'Order created successfully', supplierNotes });
         }
     );
 });
@@ -2624,6 +2655,29 @@ app.get('/api/receipt/:orderId', async (req, res) => {
     }
 });
 
+// Get all receipts
+app.get('/api/receipts', authenticateAdmin, async (req, res) => {
+    try {
+        const receipts = await new Promise((resolve, reject) => {
+            db.all(`
+                SELECT r.*, o.product_name, o.revenue, o.customer_name, o.customer_email
+                FROM receipts r
+                JOIN orders o ON r.order_id = o.id
+                ORDER BY r.sent_at DESC
+                LIMIT 100
+            `, (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
+        
+        res.json(receipts);
+    } catch (error) {
+        console.error('Get receipts error:', error);
+        res.status(500).json({ error: 'Failed to get receipts' });
+    }
+});
+
 // Create chat messages table if not exists
 db.run(`CREATE TABLE IF NOT EXISTS chat_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2647,6 +2701,15 @@ db.run(`CREATE TABLE IF NOT EXISTS chat_replies (
     reply TEXT,
     created_at TEXT,
     FOREIGN KEY (message_id) REFERENCES chat_messages(id)
+)`);
+
+// Create receipts table to track all receipts
+db.run(`CREATE TABLE IF NOT EXISTS receipts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER,
+    customer_email TEXT,
+    sent_at TEXT,
+    FOREIGN KEY (order_id) REFERENCES orders(id)
 )`);
 
 // Send chat reply endpoint (saves to database)

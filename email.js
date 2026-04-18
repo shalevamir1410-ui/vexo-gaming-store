@@ -105,6 +105,75 @@ const EMAIL_TEMPLATES = {
     }),
 
     // Chat reply email
+    // Order receipt email
+    orderReceipt: ({orderNumber, customerName, items, total}) => ({
+        subject: `🧾 קבלה מס' ${orderNumber} - VEXO Gaming Store`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body { font-family: Arial, sans-serif; direction: rtl; text-align: right; background-color: #f5f5f5; padding: 20px; }
+                    .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #ff0000; padding-bottom: 20px; }
+                    .logo { font-size: 28px; font-weight: bold; color: #ff0000; margin-bottom: 10px; }
+                    .title { font-size: 18px; color: #333; }
+                    .info { margin-bottom: 30px; }
+                    .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 10px; background: #f9f9f9; border-radius: 5px; }
+                    .info-label { font-weight: bold; color: #666; }
+                    .info-value { color: #333; }
+                    .items { margin-bottom: 30px; }
+                    .items-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; }
+                    .item { display: flex; justify-content: space-between; padding: 15px; background: #f9f9f9; margin-bottom: 10px; border-radius: 5px; }
+                    .item-name { flex: 1; }
+                    .item-qty { width: 80px; text-align: center; color: #666; }
+                    .item-price { width: 100px; text-align: left; color: #333; }
+                    .total { margin-top: 30px; padding: 20px; background: #1a0a0a; color: white; border-radius: 5px; display: flex; justify-content: space-between; font-size: 20px; font-weight: bold; }
+                    .footer { text-align: center; margin-top: 40px; color: #888; font-size: 14px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <div class="logo">🎮 VEXO Gaming Store</div>
+                        <div class="title">קבלה מס' ${orderNumber}</div>
+                    </div>
+                    
+                    <div class="info">
+                        <div class="info-row">
+                            <span class="info-label">שם הלקוח:</span>
+                            <span class="info-value">${customerName}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="items">
+                        <div class="items-title">פריטים בהזמנה</div>
+                        ${items.map(item => `
+                            <div class="item">
+                                <div class="item-name">${item.name || item.product_name || 'מוצר'}</div>
+                                <div class="item-qty">x${item.quantity || 1}</div>
+                                <div class="item-price">₪${(item.price * (item.quantity || 1)).toFixed(2)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="total">
+                        <span>סה"כ לתשלום:</span>
+                        <span>₪${total.toFixed(2)}</span>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>VEXO Gaming Store</p>
+                        <p>תודה על הזמנתך!</p>
+                        <p>אתר: vexo-gaming-store.onrender.com</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    }),
+
     chatReply: ({name, reply}) => ({
         subject: `📧 תגובה מ-VEXO Gaming Store`,
         html: `

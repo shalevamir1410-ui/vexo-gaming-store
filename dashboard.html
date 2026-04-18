@@ -459,6 +459,9 @@
             <button class="tab" onclick="showTab('messages')" id="messagesTabBtn">
                 <i class="fas fa-comment-dots"></i> הודעות <span id="msgBadge" style="background:#ff0000;color:white;border-radius:50%;padding:1px 6px;font-size:11px;display:none;">0</span>
             </button>
+            <button class="tab" onclick="showTab('receipts')">
+                <i class="fas fa-receipt"></i> קבלות
+            </button>
         </div>
 
         <!-- תוכן טאבים -->
@@ -553,6 +556,29 @@
                 <button onclick="markAllRead()" style="background:#333;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;">סמן הכל כנקרא</button>
             </div>
             <div id="messagesList"></div>
+        </div>
+
+        <div id="receipts-tab" class="tab-content">
+            <h3 style="color: var(--primary-red); margin-bottom: 20px;">🧾 קבלות שנשלחו</h3>
+            <div class="table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>מספר קבלה</th>
+                            <th>מספר הזמנה</th>
+                            <th>שם לקוח</th>
+                            <th>אימייל</th>
+                            <th>מוצר</th>
+                            <th>סה"כ</th>
+                            <th>תאריך שליחה</th>
+                            <th>פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receiptsTable">
+                        <tr><td colspan="8" class="loading">טוען קבלות...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <div id="import-tab" class="tab-content">
@@ -1151,6 +1177,31 @@
 
         function openReceipt(orderId) {
             window.open(`/api/receipt/${orderId}`, '_blank');
+        }
+
+        async function loadReceipts() {
+            try {
+                const res = await fetch('/api/receipts');
+                const receipts = await res.json();
+                const table = document.getElementById('receiptsTable');
+                if (!receipts.length) { table.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#555;padding:30px;">אין קבלות עדיין</td></tr>'; return; }
+                table.innerHTML = receipts.map(r => `
+                    <tr>
+                        <td>#${r.id}</td>
+                        <td>#${r.order_id}</td>
+                        <td>${r.customer_name}</td>
+                        <td>${r.customer_email}</td>
+                        <td>${r.product_name}</td>
+                        <td>₪${r.revenue.toFixed(2)}</td>
+                        <td>${new Date(r.sent_at).toLocaleString('he-IL')}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="openReceipt(${r.order_id})" style="background:#ff0000;font-size:12px;">
+                                <i class="fas fa-eye"></i> צפה
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch(e) { console.error('Error loading receipts:', e); }
         }
 
         async function addTrackingNumber(orderId) {
@@ -1915,6 +1966,7 @@
         showTab = function(tab) {
             _origShowTab(tab);
             if (tab === 'messages') loadMessages();
+            if (tab === 'receipts') loadReceipts();
         };
 
     </script>
