@@ -1840,8 +1840,9 @@
             try {
                 const res = await fetch('/api/chat/history');
                 const messages = await res.json();
+                console.log('Messages loaded:', messages);
                 const list = document.getElementById('messagesList');
-                if (!messages.length) { list.innerHTML = '<p style="color:#555;text-align:center;margin-top:30px;">אין הודעות עדיין</p>'; return; }
+                if (!messages || messages.length === 0) { list.innerHTML = '<p style="color:#555;text-align:center;margin-top:30px;">אין הודעות עדיין</p>'; return; }
                 list.innerHTML = messages.map(m => `
                     <div style="background:#111;border:1px solid #222;border-radius:10px;padding:15px;margin-bottom:12px;">
                         <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
@@ -1858,10 +1859,10 @@
                                 ${m.replies.map(r => `<p style="margin:0 0 5px 0;color:#ccc;font-size:13px;">${r}</p>`).join('')}
                             </div>
                         ` : ''}
-                        <button onclick="replyToMessage('${m.id}', '${m.email || ''}', '${m.name || 'לקוח'}')" style="background:#ff0000;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Outfit';">� הגב בצ'אט</button>
+                        <button onclick="replyToMessage('${m.id}', '${m.email || ''}', '${m.name || 'לקוח'}')" style="background:#ff0000;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Outfit';">💬 הגב בצ'אט</button>
                     </div>
                 `).join('');
-            } catch(e) { console.error(e); }
+            } catch(e) { console.error('Error loading messages:', e); }
         }
 
         async function loadUnreadCount() {

@@ -2454,13 +2454,10 @@ app.get('/api/chat/history', async (req, res) => {
         
         let messages;
         if (email) {
-            // Get messages for specific user with their replies
+            // Get messages for specific user
             messages = await new Promise((resolve, reject) => {
                 db.all(`
-                    SELECT m.*, 
-                           (SELECT GROUP_CONCAT(reply, '|||') 
-                            FROM chat_replies r 
-                            WHERE r.message_id = m.id) as replies
+                    SELECT m.*
                     FROM chat_messages m
                     WHERE m.email = ?
                     ORDER BY m.created_at DESC
@@ -2471,13 +2468,10 @@ app.get('/api/chat/history', async (req, res) => {
                 });
             });
         } else {
-            // Get all messages with replies
+            // Get all messages
             messages = await new Promise((resolve, reject) => {
                 db.all(`
-                    SELECT m.*, 
-                           (SELECT GROUP_CONCAT(reply, '|||') 
-                            FROM chat_replies r 
-                            WHERE r.message_id = m.id) as replies
+                    SELECT m.*
                     FROM chat_messages m
                     ORDER BY m.created_at DESC
                     LIMIT 50
@@ -2488,10 +2482,10 @@ app.get('/api/chat/history', async (req, res) => {
             });
         }
         
-        // Parse replies from string to array
+        // Add empty replies array to each message
         messages = messages.map(m => ({
             ...m,
-            replies: m.replies ? m.replies.split('|||') : []
+            replies: []
         }));
         
         res.json(messages);
