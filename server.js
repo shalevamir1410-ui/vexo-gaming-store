@@ -1308,17 +1308,17 @@ app.post('/api/request-password-reset', authLimiter, [
 // Password reset - actually resets the password
 app.post('/api/reset-password', async (req, res) => {
     const { token, newPassword } = req.body;
-    
+
     if (!token || !newPassword || newPassword.length < 6) {
         return res.status(400).json({ error: 'Invalid token or password' });
     }
-    
+
     try {
         // Verify token
         const decoded = jwt.verify(token, JWT_SECRET);
-        
+
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        
+
         db.run('UPDATE users SET password = ?, plain_password = ? WHERE email = ?',
             [hashedPassword, newPassword, decoded.email],
             function(err) {
@@ -1332,6 +1332,44 @@ app.post('/api/reset-password', async (req, res) => {
             }
         );
     } catch (error) {
+        res.status(400).json({ error: 'Invalid or expired token' });
+    }
+});
+
+// Alias for frontend compatibility
+app.post('/api/auth/reset-password', async (req, res) => {
+    const { token, password } = req.body;
+
+    console.log('Password reset request received for:', token ? 'token present' : 'no token');
+
+    if (!token || !password || password.length < 6) {
+        return res.status(400).json({ error: 'Invalid token or password' });
+    }
+
+    try {
+        // Verify token
+        const decoded = jwt.verify(token, JWT_SECRET);
+        console.log('Token decoded for email:', decoded.email);
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        db.run('UPDATE users SET password = ?, plain_password = ? WHERE email = ?',
+            [hashedPassword, password, decoded.email],
+            function(err) {
+                if (err) {
+                    console.error('Database error resetting password:', err);
+                    return res.status(500).json({ error: 'Failed to reset password' });
+                }
+                if (this.changes === 0) {
+                    console.log('User not found for email:', decoded.email);
+                    return res.status(404).json({ error: 'User not found' });
+                }
+                console.log('Password reset successfully for:', decoded.email);
+                res.json({ success: true, message: 'Password reset successfully' });
+            }
+        );
+    } catch (error) {
+        console.error('Token verification error:', error);
         res.status(400).json({ error: 'Invalid or expired token' });
     }
 });
