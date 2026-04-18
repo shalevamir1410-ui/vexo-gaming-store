@@ -10,6 +10,9 @@ const cron = require('node-cron');
 const path = require('path');
 const fs = require('fs');
 const { sendOrderConfirmation, sendShippingUpdate, sendPasswordReset } = require('./email');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
 
 // Load environment variables from .env file (for local development)
 require('dotenv').config();
@@ -20,6 +23,83 @@ const JWT_SECRET = process.env.JWT_SECRET || 'vexo-gaming-store-secret-key';
 
 // Trust proxy (required for ngrok and reverse proxies)
 app.set('trust proxy', true);
+
+// Helmet - Secure HTTP headers
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com"],
+            imgSrc: ["'self'", "data:", "https:", "https://images.unsplash.com"],
+            connectSrc: ["'self'", "https://api.resend.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'self'", "https://www.paypal.com"]
+        }
+    },
+    hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
+    },
+    noSniff: true,
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    xssFilter: true,
+    frameguard: { action: "deny" }
+}));
+
+// Rate limiting to prevent brute force attacks
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: { error: 'Too many requests from this IP, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Strict rate limiting for authentication endpoints
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // Limit each IP to 5 login attempts per windowMs
+    message: { error: 'Too many login attempts, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+app.use(limiter);
+
+// IP Blacklist (can be extended with environment variable or database)
+const BLACKLISTED_IPS = process.env.BLACKLISTED_IPS ? process.env.BLACKLISTED_IPS.split(',') : [];
+
+// Security logging middleware
+app.use((req, res, next) => {
+    const ip = req.ip || req.connection.remoteAddress;
+    const method = req.method;
+    const path = req.path;
+    const userAgent = req.get('user-agent') || 'Unknown';
+
+    // Block blacklisted IPs
+    if (BLACKLISTED_IPS.includes(ip)) {
+        console.warn(`[SECURITY ALERT] Blacklisted IP blocked: ${ip}`);
+        return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Log suspicious activities
+    if (path.includes('admin') || path.includes('login') || path.includes('register')) {
+        console.log(`[SECURITY] ${new Date().toISOString()} - IP: ${ip} - Method: ${method} - Path: ${path} - UserAgent: ${userAgent}`);
+    }
+
+    // Block suspicious user agents
+    const suspiciousPatterns = ['sqlmap', 'nmap', 'nikto', 'burpsuite', 'metasploit', 'hydra'];
+    if (suspiciousPatterns.some(pattern => userAgent.toLowerCase().includes(pattern))) {
+        console.warn(`[SECURITY ALERT] Suspicious User-Agent blocked: ${userAgent} from IP: ${ip}`);
+        return res.status(403).json({ error: 'Access denied' });
+    }
+
+    next();
+});
 
 // CORS - Allow all origins (ngrok domains change every time)
 app.use(cors({
@@ -1090,14 +1170,29 @@ app.get('/api/stats', authenticateAdmin, (req, res) => {
 });
 
 // Auth routes
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', authLimiter, [
+    body('name').trim().escape().isLength({ min: 2, max: 50 }).withMessage('Name must be 2-50 characters'),
+    body('email').trim().isEmail().normalizeEmail().withMessage('Invalid email'),
+    body('password').isLength({ min: 8, max: 100 }).withMessage('Password must be 8-100 characters')
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+        .withMessage('Password must contain at least one uppercase, one lowercase, one number, and one special character'),
+    body('phone').optional().trim().escape(),
+    body('address').optional().trim().escape(),
+    body('city').optional().trim().escape(),
+    body('zip').optional().trim().escape()
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+    }
+
     const { name, email, password, phone, address, city, zip } = req.body;
-    
+
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        
-        db.run('INSERT INTO users (name, email, password, plain_password, phone, address, city, zip) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
-            [name, email, hashedPassword, password, phone, address, city, zip], 
+
+        db.run('INSERT INTO users (name, email, password, plain_password, phone, address, city, zip) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [name, email, hashedPassword, password, phone, address, city, zip],
             function(err) {
                 if (err) {
                     if (err.message.includes('UNIQUE constraint failed')) {
@@ -1105,7 +1200,7 @@ app.post('/api/register', async (req, res) => {
                     }
                     return res.status(500).json({ error: 'Registration failed' });
                 }
-                
+
                 const token = jwt.sign({ id: this.lastID, email, name }, JWT_SECRET);
                 res.json({ token, user: { id: this.lastID, email, name } });
             }
@@ -1115,11 +1210,19 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-app.post('/api/login', (req, res) => {
+app.post('/api/login', authLimiter, [
+    body('email').trim().isEmail().normalizeEmail().withMessage('Invalid email'),
+    body('password').isLength({ min: 1 }).withMessage('Password is required')
+], (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+    }
+
     const { email, password } = req.body;
-    
+
     console.log('Login attempt for:', email);
-    
+
     db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
         if (err) {
             console.error('Database error during login:', err);
@@ -1148,9 +1251,9 @@ app.post('/api/login', (req, res) => {
 });
 
 // Admin login
-app.post('/api/admin/login', (req, res) => {
+app.post('/api/admin/login', authLimiter, (req, res) => {
     const { code, email } = req.body;
-    
+
     if (code === '0256' && email === 'Shalevamir1410@gmail.com') {
         const token = jwt.sign({ id: 0, email, name: 'Admin' }, JWT_SECRET);
         res.json({ token, user: { id: 0, email, name: 'Admin' } });
@@ -1160,7 +1263,14 @@ app.post('/api/admin/login', (req, res) => {
 });
 
 // Password reset request - sends email
-app.post('/api/request-password-reset', async (req, res) => {
+app.post('/api/request-password-reset', authLimiter, [
+    body('email').trim().isEmail().normalizeEmail().withMessage('Invalid email')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+    }
+
     const { email } = req.body;
     
     if (!email) {
@@ -1272,13 +1382,33 @@ app.get('/api/products', (req, res) => {
     });
 });
 
-app.post('/api/products', authenticateAdmin, (req, res) => {
+app.post('/api/products', authenticateAdmin, [
+    body('sku').optional().trim().escape(),
+    body('name').trim().escape().isLength({ min: 1, max: 200 }).withMessage('Name is required and max 200 characters'),
+    body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+    body('originalPrice').optional().isFloat({ min: 0 }).withMessage('Original price must be a positive number'),
+    body('supplierCost').optional().isFloat({ min: 0 }).withMessage('Supplier cost must be a positive number'),
+    body('description').optional().trim().escape(),
+    body('category').trim().escape(),
+    body('inStock').optional().isInt({ min: 0 }).withMessage('In stock must be a positive integer'),
+    body('pid').optional().trim().escape(),
+    body('vid').optional().trim().escape(),
+    body('provider').optional().trim().escape(),
+    body('supplierLink').optional().trim().escape().isURL().withMessage('Supplier link must be a valid URL'),
+    body('image').optional().trim().escape().isURL().withMessage('Image must be a valid URL'),
+    body('maxQuantity').optional().isInt({ min: 1 }).withMessage('Max quantity must be a positive integer')
+], (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+    }
+
     const { sku, name, price, originalPrice, supplierCost, description, category, inStock, pid, vid, provider, supplierLink, image, gallery, colors, maxQuantity } = req.body;
     const galleryStr = JSON.stringify(gallery || []);
     const colorsStr = JSON.stringify(colors || []);
-    
-    db.run('INSERT INTO products (sku, name, price, originalPrice, supplierCost, image, gallery, description, category, inStock, pid, vid, provider, supplierLink, colors, maxQuantity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-        [sku, name, price, originalPrice, supplierCost, image, galleryStr, description, category, inStock || 1, pid, vid, provider, supplierLink, colorsStr, maxQuantity || 10], 
+
+    db.run('INSERT INTO products (sku, name, price, originalPrice, supplierCost, image, gallery, description, category, inStock, pid, vid, provider, supplierLink, colors, maxQuantity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [sku, name, price, originalPrice, supplierCost, image, galleryStr, description, category, inStock || 1, pid, vid, provider, supplierLink, colorsStr, maxQuantity || 10],
         function(err) {
             if (err) {
                 console.error('Error adding product:', err);
@@ -1356,22 +1486,33 @@ app.get('/api/orders', authenticateAdmin, (req, res) => {
     });
 });
 
-app.post('/api/orders', authenticateToken, (req, res) => {
+app.post('/api/orders', authenticateToken, [
+    body('items').isArray({ min: 1 }).withMessage('Items must be an array with at least one item'),
+    body('revenue').isFloat({ min: 0 }).withMessage('Revenue must be a positive number'),
+    body('cost').optional().isFloat({ min: 0 }).withMessage('Cost must be a positive number'),
+    body('profit').optional().isFloat({ min: 0 }).withMessage('Profit must be a positive number'),
+    body('shippingAddress').optional().trim().escape()
+], (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+    }
+
     const { items, revenue, cost, profit, shippingAddress } = req.body;
-    
+
     const items_json = JSON.stringify(items);
     const product_name = items.map(item => item.name).join(', ');
-    
+
     // הערה קבועה לספק - dropshipping
     const supplierNotes = 'No invoices or logos, dropshipping order.';
-    
-    db.run('INSERT INTO orders (product_name, items_json, revenue, cost, profit, customer_name, customer_email, shipping_address, supplier_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-        [product_name, items_json, revenue, cost, profit, req.user.name, req.user.email, shippingAddress, supplierNotes], 
+
+    db.run('INSERT INTO orders (product_name, items_json, revenue, cost, profit, customer_name, customer_email, shipping_address, supplier_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [product_name, items_json, revenue, cost, profit, req.user.name, req.user.email, shippingAddress, supplierNotes],
         async function(err) {
             if (err) {
                 return res.status(500).json({ error: 'Failed to create order' });
             }
-            
+
             const orderId = this.lastID;
             
             // Send order confirmation email

@@ -8,25 +8,34 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "sqlite3": "^5.1.6",
-    "pg": "^8.11.3",
-    "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
     "axios": "^1.6.2",
+    "bcryptjs": "^2.4.3",
     "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.3.2",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^3.0.3",
-    "dotenv": "^16.3.1",
-    "resend": "^3.2.0",
+    "pg": "^8.11.3",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "resend": "^3.2.0",
+    "sqlite3": "^5.1.6"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
   },
-  "keywords": ["gaming", "dropshipping", "store", "hebrew", "rtl"],
+  "keywords": [
+    "gaming",
+    "dropshipping",
+    "store",
+    "hebrew",
+    "rtl"
+  ],
   "author": "Shalev Amir",
   "license": "MIT"
 }
