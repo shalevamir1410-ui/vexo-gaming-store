@@ -33,7 +33,7 @@ app.use(helmet({
             scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com", "https://www.paypal.com"],
             scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:", "https://images.unsplash.com"],
-            connectSrc: ["'self'", "https://api.resend.com"],
+            connectSrc: ["'self'", "https://api.resend.com", "https://www.paypal.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
             objectSrc: ["'none'"],
             mediaSrc: ["'self'"],
@@ -1212,7 +1212,7 @@ app.post('/api/register', authLimiter, [
 });
 
 app.post('/api/login', authLimiter, [
-    body('email').trim().isEmail().normalizeEmail().withMessage('Invalid email'),
+    body('email').trim().isEmail().withMessage('Invalid email'),
     body('password').isLength({ min: 1 }).withMessage('Password is required')
 ], (req, res) => {
     const errors = validationResult(req);
@@ -1224,7 +1224,7 @@ app.post('/api/login', authLimiter, [
 
     console.log('Login attempt for:', email);
 
-    db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
+    db.get('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', [email], async (err, user) => {
         if (err) {
             console.error('Database error during login:', err);
             return res.status(500).json({ error: 'Server error' });
