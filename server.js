@@ -2506,6 +2506,124 @@ app.get('/api/chat/history', async (req, res) => {
     }
 });
 
+// Generate receipt HTML for an order
+app.get('/api/receipt/:orderId', async (req, res) => {
+    try {
+        const orderId = req.params.orderId;
+        
+        // Get order details
+        const order = await new Promise((resolve, reject) => {
+            db.get('SELECT * FROM orders WHERE id = ?', [orderId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+        
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+        
+        // Get order items
+        const items = JSON.parse(order.items || '[]');
+        
+        // Generate receipt HTML
+        const receiptHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>קבלה #${order.id} - VEXO Gaming Store</title>
+    <style>
+        body { font-family: Arial, sans-serif; direction: rtl; text-align: right; padding: 40px; background: #f5f5f5; }
+        .receipt { max-width: 700px; margin: 0 auto; background: white; padding: 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #ff0000; padding-bottom: 20px; }
+        .logo { font-size: 28px; font-weight: bold; color: #ff0000; margin-bottom: 10px; }
+        .title { font-size: 18px; color: #333; }
+        .info { margin-bottom: 30px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 10px; background: #f9f9f9; border-radius: 5px; }
+        .info-label { font-weight: bold; color: #666; }
+        .info-value { color: #333; }
+        .items { margin-bottom: 30px; }
+        .items-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; }
+        .item { display: flex; justify-content: space-between; padding: 15px; background: #f9f9f9; margin-bottom: 10px; border-radius: 5px; }
+        .item-name { flex: 1; }
+        .item-qty { width: 80px; text-align: center; color: #666; }
+        .item-price { width: 100px; text-align: left; color: #333; }
+        .total { margin-top: 30px; padding: 20px; background: #1a0a0a; color: white; border-radius: 5px; display: flex; justify-content: space-between; font-size: 20px; font-weight: bold; }
+        .footer { text-align: center; margin-top: 40px; color: #888; font-size: 14px; }
+        .print-btn { position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        @media print {
+            .print-btn { display: none; }
+            body { background: white; }
+            .receipt { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn" onclick="window.print()">🖨️ הדפס קבלה</button>
+    <div class="receipt">
+        <div class="header">
+            <div class="logo">🎮 VEXO Gaming Store</div>
+            <div class="title">קבלה מס' ${order.id}</div>
+            <div style="color: #666; margin-top: 5px;">${new Date(order.created_at).toLocaleString('he-IL')}</div>
+        </div>
+        
+        <div class="info">
+            <div class="info-row">
+                <span class="info-label">שם הלקוח:</span>
+                <span class="info-value">${order.name || 'לא צוין'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">אימייל:</span>
+                <span class="info-value">${order.email || 'לא צוין'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">כתובת:</span>
+                <span class="info-value">${order.address || 'לא צוין'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">טלפון:</span>
+                <span class="info-value">${order.phone || 'לא צוין'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">סטטוס:</span>
+                <span class="info-value" style="color: ${order.status === 'completed' ? '#27ae60' : '#f39c12'};">${order.status || 'ממתין'}</span>
+            </div>
+        </div>
+        
+        <div class="items">
+            <div class="items-title">פריטים בהזמנה</div>
+            ${items.map(item => `
+                <div class="item">
+                    <div class="item-name">${item.name || item.product_name || 'מוצר'}</div>
+                    <div class="item-qty">x${item.quantity || 1}</div>
+                    <div class="item-price">₪${(item.price * (item.quantity || 1)).toFixed(2)}</div>
+                </div>
+            `).join('')}
+        </div>
+        
+        <div class="total">
+            <span>סה"כ לתשלום:</span>
+            <span>₪${order.total.toFixed(2)}</span>
+        </div>
+        
+        <div class="footer">
+            <p>VEXO Gaming Store</p>
+            <p>תודה על הזמנתך!</p>
+            <p>אתר: vexo-gaming-store.onrender.com</p>
+        </div>
+    </div>
+</body>
+</html>
+        `;
+        
+        res.send(receiptHtml);
+    } catch (error) {
+        console.error('Receipt generation error:', error);
+        res.status(500).json({ error: 'Failed to generate receipt' });
+    }
+});
+
 // Create chat messages table if not exists
 db.run(`CREATE TABLE IF NOT EXISTS chat_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
