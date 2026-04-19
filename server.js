@@ -1254,7 +1254,7 @@ app.post('/api/login', authLimiter, [
         }
 
         // Set token expiration based on remember me
-        const tokenExpiry = rememberMe ? '3650d' : '365d';
+        const tokenExpiry = rememberMe ? '36500d' : '3650d';
         console.log('Token expiry:', tokenExpiry);
 
         const token = jwt.sign(
