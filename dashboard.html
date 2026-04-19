@@ -1687,9 +1687,11 @@
 
         async function viewUserOrders(email) {
             const orders = await fetchApi(`/api/admin/user-orders/${email}`);
-            if (orders) {
+            if (orders && Array.isArray(orders)) {
                 // פתיחת חלון חדש עם הזמנות המשתמש
                 alert(`הזמנות של ${email}:\n${orders.map(o => `#${o.id} - ${o.product_name} - ${o.status}`).join('\n')}`);
+            } else if (orders) {
+                alert(`הזמנות של ${email}:\nאין הזמנות`);
             }
         }
 

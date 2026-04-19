@@ -2080,11 +2080,13 @@ app.put('/api/admin/user-password/:id', authenticateAdmin, (req, res) => {
 });
 
 app.get('/api/admin/user-orders/:email', authenticateAdmin, (req, res) => {
-    db.all(`SELECT id, productName, status, trackingNumber, cj_order_id, created_at FROM orders WHERE customer_email = ? ORDER BY id DESC`, 
+    db.all(`SELECT id, product_name, status, trackingNumber, cj_order_id, created_at FROM orders WHERE customer_email = ? ORDER BY id DESC`,
         [req.params.email], (err, rows) => {
         if (err) {
+            console.error('Error fetching user orders:', err);
             return res.status(500).json({ error: 'Failed to get user orders' });
         }
+        console.log(`Found ${rows ? rows.length : 0} orders for ${req.params.email}`);
         res.json(rows || []);
     });
 });
@@ -2787,10 +2789,10 @@ app.get('/api/chat/history', async (req, res) => {
 });
 
 // Generate receipt HTML for an order
-app.get('/api/receipt/:orderId', async (req, res) => {
+app.get('/api/receipt/:orderId', authenticateToken, async (req, res) => {
     try {
         const orderId = req.params.orderId;
-        
+
         // Get order details
         const order = await new Promise((resolve, reject) => {
             db.get('SELECT * FROM orders WHERE id = ?', [orderId], (err, row) => {
