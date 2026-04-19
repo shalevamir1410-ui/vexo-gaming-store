@@ -1224,10 +1224,11 @@ app.post('/api/login', authLimiter, [
         return res.status(400).json({ error: errors.array()[0].msg });
     }
 
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     console.log('Login attempt for:', email);
     console.log('Password length:', password ? password.length : 0);
+    console.log('Remember me:', rememberMe);
 
     db.get('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', [email], async (err, user) => {
         if (err) {
@@ -1247,12 +1248,22 @@ app.post('/api/login', authLimiter, [
 
         const isValidPassword = await bcrypt.compare(password, user.password);
         console.log('Password valid:', isValidPassword);
-        
+
         if (!isValidPassword) {
             return res.status(400).json({ error: 'Invalid credentials' });
         }
-        
-        const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET);
+
+        // Set token expiration based on remember me
+        const tokenExpiry = rememberMe ? '30d' : '24h';
+        console.log('Token expiry:', tokenExpiry);
+
+        const token = jwt.sign(
+            { id: user.id, email: user.email, name: user.name },
+            JWT_SECRET,
+            { expiresIn: tokenExpiry }
+        );
+
+        console.log('Token generated successfully');
         res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
     });
 });
