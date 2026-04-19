@@ -635,11 +635,15 @@
                 <input type="text" id="nameR" placeholder="שם מלא">
                 <input type="email" id="emailR" placeholder="אימייל">
                 <div class="password-wrapper">
-                    <input type="password" id="passR" placeholder="סיסמה (6+ תווים)">
+                    <input type="password" id="passR" placeholder="סיסמה (8+ תווים, אות גדולה, קטנה, מספר, תו מיוחד)">
                     <i class="fas fa-eye eye-icon" onclick="togglePassword('passR', this)"></i>
                 </div>
                 <input type="text" id="addrR" placeholder="כתובת למשלוח">
                 <input type="tel" id="phoneR" placeholder="מספר טלפון (לדוגמה: 0501234567)">
+                <div style="display:flex; align-items:center; margin-bottom:15px; gap:8px;">
+                    <input type="checkbox" id="rememberMeR" style="cursor:pointer;">
+                    <label for="rememberMeR" style="font-size:13px; color:#888; cursor:pointer;">זכור אותי</label>
+                </div>
                 <button class="btn btn-buy" style="width:100%" onclick="register()">הרשמה וסיום</button>
                 <p style="text-align:center; font-size:12px; color:#555; cursor:pointer"
                     onclick="document.getElementById('formR').style.display='none'; document.getElementById('formL').style.display='block'">
@@ -1514,23 +1518,28 @@
             const password = document.getElementById('passR').value;
             const address = document.getElementById('addrR').value;
             const phone = document.getElementById('phoneR').value;
-            
+            const rememberMe = document.getElementById('rememberMeR').checked;
+
             if (!name || !email || !password) {
                 showToast('אנא מלא את כל השדות', true);
                 return;
             }
-            
-            if (password.length < 6) {
-                showToast('הסיסמה חייבת להיות לפחות 6 תווים', true);
+
+            if (password.length < 8) {
+                showToast('הסיסמה חייבת להכיל לפחות 8 תווים', true);
                 return;
             }
-            
+            if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[@$!%*?&]/.test(password)) {
+                showToast('הסיסמה חייבת להכיל אות גדולה, אות קטנה, מספר ותו מיוחד', true);
+                return;
+            }
+
             if (!phone) {
                 showToast('אנא הכנס מספר טלפון', true);
                 return;
             }
-            
-            const res = await fetchApi('/api/register', 'POST', { name, email, password, address, phone });
+
+            const res = await fetchApi('/api/register', 'POST', { name, email, password, address, phone, rememberMe });
             if (res && res.token) {
                 localStorage.setItem('vexoToken', res.token);
                 localStorage.setItem('vexoUser', JSON.stringify(res.user));

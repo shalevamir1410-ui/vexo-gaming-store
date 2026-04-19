@@ -1187,7 +1187,7 @@ app.post('/api/register', authLimiter, [
         return res.status(400).json({ error: errors.array()[0].msg });
     }
 
-    const { name, email, password, phone, address, city, zip } = req.body;
+    const { name, email, password, phone, address, city, zip, rememberMe } = req.body;
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -1202,7 +1202,15 @@ app.post('/api/register', authLimiter, [
                     return res.status(500).json({ error: 'Registration failed' });
                 }
 
-                const token = jwt.sign({ id: this.lastID, email, name }, JWT_SECRET);
+                // Set token expiration based on remember me
+                const tokenExpiry = rememberMe ? '36500d' : '3650d';
+                console.log('Register token expiry:', tokenExpiry);
+
+                const token = jwt.sign(
+                    { id: this.lastID, email, name },
+                    JWT_SECRET,
+                    { expiresIn: tokenExpiry }
+                );
                 res.json({ token, user: { id: this.lastID, email, name } });
             }
         );
