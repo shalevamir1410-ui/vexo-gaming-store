@@ -2084,6 +2084,11 @@ app.get('/api/admin/user-orders/:email', authenticateAdmin, (req, res) => {
         [req.params.email], (err, rows) => {
         if (err) {
             console.error('Error fetching user orders:', err);
+            // If table doesn't exist, return empty array
+            if (err.message.includes('no such table')) {
+                console.log('Orders table does not exist, returning empty array');
+                return res.json([]);
+            }
             return res.status(500).json({ error: 'Failed to get user orders' });
         }
         console.log(`Found ${rows ? rows.length : 0} orders for ${req.params.email}`);
@@ -2102,6 +2107,11 @@ app.get('/api/admin/receipts', authenticateAdmin, (req, res) => {
             ORDER BY r.sent_at DESC`, (err, rows) => {
         if (err) {
             console.error('Error fetching receipts:', err);
+            // If table doesn't exist, return empty array
+            if (err.message.includes('no such table')) {
+                console.log('Receipts table does not exist, returning empty array');
+                return res.json([]);
+            }
             return res.status(500).json({ error: 'Failed to get receipts' });
         }
         console.log(`Found ${rows ? rows.length : 0} receipts`);

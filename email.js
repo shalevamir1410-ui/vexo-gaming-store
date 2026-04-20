@@ -239,23 +239,18 @@ const EMAIL_TEMPLATES = {
                     <h2>איפוס סיסמה</h2>
                     <p>ביקשת לאפס את הסיסמה שלך.</p>
                     <p>לחץ על הכפתור למטה כדי לאפס את הסיסמה:</p>
-                    
-                    <table border="0" cellpadding="0" cellspacing="0" style="margin: 20px auto;">
-                        <tr>
-                            <td align="center" bgcolor="#007bff" style="border-radius: 5px;">
-                                <a href="${resetLink}" style="
-                                    background-color: #007bff;
-                                    color: white;
-                                    padding: 15px 30px;
-                                    text-decoration: none;
-                                    display: inline-block;
-                                    font-weight: bold;
-                                    font-size: 16px;
-                                    border-radius: 5px;
-                                ">לחץ כאן לאיפוס סיסמה</a>
-                            </td>
-                        </tr>
-                    </table>
+
+                    <a href="${resetLink}" style="
+                        background-color: #007bff;
+                        color: white;
+                        padding: 15px 30px;
+                        text-decoration: none;
+                        display: inline-block;
+                        font-weight: bold;
+                        font-size: 16px;
+                        border-radius: 5px;
+                        margin: 20px 0;
+                    ">לחץ כאן לאיפוס סיסמה</a>
                     
                     <p style="font-size: 12px; color: #666;">אם הכפתור לא עובד, העתק והדבק את הקישור הבא בדפדפן:</p>
                     <p style="word-break: break-all; font-size: 11px; color: #0066cc;">${encodeURI(resetLink)}</p>

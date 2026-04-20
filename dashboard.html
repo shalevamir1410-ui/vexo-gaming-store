@@ -1111,12 +1111,17 @@
 
         function renderOrders(orders) {
             const tbody = document.getElementById('ordersTable');
-            
+
+            if (!orders || !Array.isArray(orders)) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">אין הזמנות</td></tr>';
+                return;
+            }
+
             if (orders.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" class="empty-state">אין הזמנות</td></tr>';
                 return;
             }
-            
+
             tbody.innerHTML = orders.map(order => {
                 // Determine tracking status color
                 let trackingStatusColor = '#888';
