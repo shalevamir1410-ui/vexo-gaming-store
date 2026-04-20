@@ -2093,6 +2093,22 @@ app.get('/api/admin/user-orders/:email', authenticateAdmin, (req, res) => {
 
 // NOTE: PUT /api/products/:id is defined earlier with full colors + maxQuantity support
 
+// Get receipts (admin only)
+app.get('/api/admin/receipts', authenticateAdmin, (req, res) => {
+    db.all(`SELECT r.id as receipt_id, r.order_id, r.customer_email, r.sent_at,
+            o.product_name, o.revenue
+            FROM receipts r
+            LEFT JOIN orders o ON r.order_id = o.id
+            ORDER BY r.sent_at DESC`, (err, rows) => {
+        if (err) {
+            console.error('Error fetching receipts:', err);
+            return res.status(500).json({ error: 'Failed to get receipts' });
+        }
+        console.log(`Found ${rows ? rows.length : 0} receipts`);
+        res.json(rows || []);
+    });
+});
+
 // Get user orders
 app.get('/api/user/orders', authenticateToken, (req, res) => {
     db.all('SELECT * FROM orders WHERE customer_email = ? ORDER BY created_at DESC', [req.user.email], (err, orders) => {

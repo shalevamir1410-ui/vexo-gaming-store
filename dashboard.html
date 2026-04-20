@@ -1028,6 +1028,9 @@
                 case 'users':
                     await loadUsers();
                     break;
+                case 'receipts':
+                    await loadReceipts();
+                    break;
             }
         }
 
@@ -1276,6 +1279,57 @@
                 console.error('loadUsers() received invalid data:', users);
             }
             console.log('loadUsers() - END');
+        }
+
+        async function loadReceipts() {
+            const receipts = await fetchApi('/api/admin/receipts');
+            if (receipts && Array.isArray(receipts)) {
+                allReceipts = receipts;
+                renderReceipts(receipts);
+            } else {
+                const tbody = document.getElementById('receiptsTable');
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-state">אין קבלות</td></tr>';
+            }
+        }
+
+        function renderReceipts(receipts) {
+            const tbody = document.getElementById('receiptsTable');
+
+            if (!tbody) {
+                console.error('receiptsTable element not found!');
+                return;
+            }
+
+            if (!receipts || !Array.isArray(receipts)) {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-state">אין קבלות</td></tr>';
+                return;
+            }
+
+            if (receipts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-state">אין קבלות</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = receipts.map(receipt => `
+                <tr>
+                    <td>#${receipt.receipt_id}</td>
+                    <td>#${receipt.order_id}</td>
+                    <td>-</td>
+                    <td>${receipt.customer_email}</td>
+                    <td>${receipt.product_name || '-'}</td>
+                    <td>₪${receipt.revenue || 0}</td>
+                    <td>${new Date(receipt.sent_at).toLocaleDateString('he-IL')}</td>
+                    <td class="actions">
+                        <button class="btn btn-secondary" onclick="viewReceipt(${receipt.order_id})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function viewReceipt(orderId) {
+            window.open(`/api/receipt/${orderId}`, '_blank');
         }
 
         function renderUsers(users) {
