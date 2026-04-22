@@ -1251,7 +1251,6 @@ app.post('/api/login', authLimiter, [
 
         console.log('User found, checking password...');
         console.log('Stored password hash:', user.password ? user.password.substring(0, 20) + '...' : 'null');
-        console.log('Plain password exists:', !!user.plain_password);
         console.log('User email in DB:', user.email);
 
         const isValidPassword = await bcrypt.compare(password, user.password);
