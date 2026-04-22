@@ -20,6 +20,8 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'vexo-gaming-store-secret-key';
+const CJ_API_KEY = process.env.CJ_API_KEY || 'CJ5295285@api@e27a42bec7174b39b21e18c5f610e136';
+const CJ_API_BASE = 'https://api.cjdropshipping.com';
 
 // Trust proxy (required for ngrok and reverse proxies)
 app.set('trust proxy', true);
@@ -1869,6 +1871,53 @@ app.post('/api/import-cj-product', authenticateAdmin, async (req, res) => {
     }
 });
 
+// Test CJ API connection
+app.get('/api/admin/cj-test-connection', authenticateAdmin, async (req, res) => {
+    try {
+        console.log('🧪 Testing CJ API connection...');
+        console.log('🔑 CJ_API_KEY:', CJ_API_KEY ? 'Set' : 'Not set');
+
+        // Test 1: Try to get token
+        const token = await cjApi.getCjToken();
+        console.log('🔑 Token obtained:', token ? 'Yes' : 'No');
+
+        // Test 2: Try to get product list
+        let products = [];
+        try {
+            const response = await axios.get(`${CJ_API_BASE}/product/list`, {
+                headers: {
+                    'Authorization': token,
+                    'Content-Type': 'application/json'
+                },
+                params: { pageSize: 5, pageNum: 1 },
+                timeout: 15000
+            });
+            products = response.data?.data || [];
+            console.log(`📦 Found ${products.length} products`);
+        } catch (err) {
+            console.error('❌ Failed to get products:', err.message);
+        }
+
+        res.json({
+            success: true,
+            tokenObtained: !!token,
+            productCount: products.length,
+            cjApiKeySet: !!CJ_API_KEY,
+            sampleProduct: products.length > 0 ? {
+                sku: products[0].sku,
+                name: products[0].productTitle || products[0].productName
+            } : null
+        });
+    } catch (error) {
+        console.error('❌ CJ Test failed:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            cjApiKeySet: !!CJ_API_KEY
+        });
+    }
+});
+
 // Manual sync all CJ products - סנכרון ידני של כל המוצרים
 app.post('/api/sync-cj-products', authenticateAdmin, async (req, res) => {
     console.log('🔄 Manual CJ Products Sync requested by admin');
@@ -2268,8 +2317,7 @@ app.get('/dashboard', (req, res) => {
 });
 
 // Automatic CJ Sync - סנכרון אוטומטי של מוצרים מ-CJ
-const CJ_API_KEY = process.env.CJ_API_KEY || 'CJ5295285@api@e27a42bec7174b39b21e18c5f610e136';
-const CJ_API_BASE = 'https://api.cjdropshipping.com';
+// NOTE: CJ_API_KEY and CJ_API_BASE are defined at the top of the file
 
 // פונקציה לסנכרון אוטומטי
 async function syncCJProducts() {
