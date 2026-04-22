@@ -1814,43 +1814,59 @@ app.put('/api/admin/users/:userId/password', authenticateAdmin, [
 // CJ API integration
 app.post('/api/import-cj-product', authenticateAdmin, async (req, res) => {
     const { sku } = req.body;
-    
+
+    console.log('📦 Importing CJ product with SKU:', sku);
+
     try {
-        const response = await axios.get(`https://api.cjdropshipping.com/product/api/product/query?apiKey=${CJ_API_KEY}&sku=${sku}`);
-        const product = response.data.data;
-        
+        const response = await axios.get(`https://api.cjdropshipping.com/product/api/product/query?apiKey=${CJ_API_KEY}&sku=${sku}`, {
+            timeout: 15000
+        });
+
+        console.log('📦 CJ API Response Status:', response.status);
+        console.log('📦 CJ API Response Data:', JSON.stringify(response.data, null, 2));
+
+        // CJ API returns data in different formats
+        const product = response.data?.data || response.data;
+
         if (!product) {
-            return res.status(404).json({ error: 'Product not found' });
+            console.error('❌ Product not found in response');
+            return res.status(404).json({ error: 'Product not found', details: response.data });
         }
-        
+
+        console.log('📦 Product found:', product);
+
         const productData = {
-            sku: product.sku,
-            name: product.productTitle,
-            price: product.sellPrice,
-            originalPrice: product.originalPrice,
-            supplierCost: product.cost,
-            image: product.mainImage,
+            sku: product.sku || sku,
+            name: product.productTitle || product.name || 'Product',
+            price: product.sellPrice || product.price || 0,
+            originalPrice: product.originalPrice || 0,
+            supplierCost: product.cost || 0,
+            image: product.mainImage || product.image || '',
             gallery: JSON.stringify(product.images || []),
-            description: product.description,
-            category: product.categoryName,
+            description: product.description || '',
+            category: product.categoryName || product.category || 'אחר',
             inStock: product.stock ? 1 : 0,
-            pid: product.pid,
-            vid: product.vid,
+            pid: product.pid || '',
+            vid: product.vid || '',
             provider: 'CJ',
-            supplierLink: product.sourceUrl
+            supplierLink: product.sourceUrl || ''
         };
-        
-        db.run('INSERT OR REPLACE INTO products (sku, name, price, originalPrice, supplierCost, image, gallery, description, category, inStock, pid, vid, provider, supplierLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-            Object.values(productData), 
+
+        console.log('📦 Inserting product data:', productData);
+
+        db.run('INSERT OR REPLACE INTO products (sku, name, price, originalPrice, supplierCost, image, gallery, description, category, inStock, pid, vid, provider, supplierLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            Object.values(productData),
             function(err) {
                 if (err) {
-                    return res.status(500).json({ error: 'Failed to import product' });
+                    console.error('❌ Database error importing product:', err);
+                    return res.status(500).json({ error: 'Failed to import product', details: err.message });
                 }
+                console.log('✅ Product imported successfully');
                 res.json({ message: 'Product imported successfully', product: productData });
-            }
-        );
+            });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to import from CJ' });
+        console.error('❌ CJ API error:', error);
+        res.status(500).json({ error: 'Failed to import from CJ', details: error.message });
     }
 });
 
